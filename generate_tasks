@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""The task generator."""
+import sys
+from argparse import ArgumentParser
+
+from incremental_tasks import (
+    ElementaryLanguage,
+    HardSymbolCounting,
+    IncreasingPeriod,
+    Periodic,
+    SymbolCounting,
+    Task,
+    HarderElementaryLanguage
+)
+
+ID_TO_TASK = {
+    1: Periodic,
+    2: IncreasingPeriod,
+    5: ElementaryLanguage,
+    3: SymbolCounting,
+    4: HardSymbolCounting,
+    6: HarderElementaryLanguage
+}
+
+NAME_TO_TASK = {
+    "periodic": Periodic,
+    "inc-per": IncreasingPeriod,
+    "sym-ct": SymbolCounting,
+    "hard-sym-ct": HardSymbolCounting,
+    "qa": ElementaryLanguage,
+    "hard-qa": HarderElementaryLanguage,
+}
+
+
+def make_parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        description="This is the incremental tasks generator. "
+        "You can use it to generate the tasks and use the benchmark."
+    )
+    parser.add_argument("task_id", type=str)
+    parser.add_argument("--n_examples", type=int, default=1000)
+
+    return parser
+
+
+def get_task(task_id: str) -> Task:
+    if task_id.isdigit():
+        return ID_TO_TASK[int(task_id)]()
+    else:
+        return NAME_TO_TASK[task_id]()
+
+
+if __name__ == "__main__":
+    argparser = make_parser()
+    args = argparser.parse_args()
+
+    task: Task = get_task(args.task_id)
+    seqs, masks = task.generate_tasks(max_n_seq=args.n_examples)
+    for seq in seqs:
+        sys.stdout.write(" ".join(seq) + "\n")
