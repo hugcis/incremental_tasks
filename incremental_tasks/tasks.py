@@ -1,23 +1,28 @@
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union
+
 import numpy as np
-from typing import Any, Type, Union, Sequence, Dict, List, Tuple, Optional
 
 TaskType = List[List[str]]
 Mask = Optional[List[List[int]]]
 TaskMask = Tuple[TaskType, Mask]
+SingleTM = Tuple[List[str], Optional[List[int]]]
 
 
 def choose_minimal_set(tasks: TaskType, max_n_seq: int, mask: Mask = None) -> TaskMask:
     """Select `max_n_seq` random task/mask pairs from a list."""
     if len(tasks) > max_n_seq:
         idx = np.random.choice(range(len(tasks)), size=max_n_seq, replace=False)
-        if mask is not None:
+        if mask is not None and len(mask) == len(tasks):
             return_mask = [mask[i] for i in idx]
         else:
             return_mask = None
         return [tasks[i] for i in idx], return_mask
     else:
-        return tasks, mask
+        if mask is not None and len(mask) != len(tasks):
+            return tasks, None
+        else:
+            return tasks, mask
 
 
 class Task(ABC):
@@ -35,8 +40,24 @@ class Task(ABC):
         self.name = name
 
     @abstractmethod
-    def generate_tasks(self, max_n_seq: int, **kwargs) -> TaskMask:
+    def generate_single(self, **kwargs) -> SingleTM:
         raise NotImplementedError
+
+    def generate_tasks(self, max_n_seq: int = 10, **kwargs) -> Tuple[TaskType, Mask]:
+        tasks = []
+        masks: List[List[int]] = []
+        st: Set[str] = set()
+        ct = 0
+        while len(st) < max_n_seq and ct < 5 * max_n_seq:
+            task_list, mask = self.generate_single(**kwargs)
+            task_str = "".join(task_list)
+            if task_str not in st:
+                if mask is not None:
+                    masks.append(mask)
+                tasks.append(task_list)
+                st.add(task_str)
+            ct += 1
+        return choose_minimal_set(tasks, max_n_seq, mask=masks)
 
     def output_dimension(self) -> int:
         return len(self.dictionary)

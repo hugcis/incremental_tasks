@@ -10,7 +10,7 @@ from incremental_tasks import (
     Periodic,
     SymbolCounting,
     Task,
-    HarderElementaryLanguage
+    HarderElementaryLanguage,
 )
 
 ID_TO_TASK = {
@@ -19,7 +19,7 @@ ID_TO_TASK = {
     5: ElementaryLanguage,
     3: SymbolCounting,
     4: HardSymbolCounting,
-    6: HarderElementaryLanguage
+    6: HarderElementaryLanguage,
 }
 
 NAME_TO_TASK = {
@@ -37,8 +37,28 @@ def make_parser() -> ArgumentParser:
         description="This is the incremental tasks generator. "
         "You can use it to generate the tasks and use the benchmark."
     )
-    parser.add_argument("task_id", type=str)
-    parser.add_argument("--n_examples", type=int, default=1000)
+    parser.add_argument(
+        "task_id",
+        metavar="ID",
+        type=str,
+        help="The ID of the task to generate sentences for.",
+    )
+    parser.add_argument(
+        "-n",
+        "--n-examples",
+        type=int,
+        default=1000,
+        help="Maximum number of sentences to generate (actual number generated "
+        "might be lower for tasks "
+        "with a low number of distinct examples).",
+    )
+    parser.add_argument(
+        "--extra-args",
+        type=list[str],
+        nargs="*",
+        help="Optional additional arguments to be passed to the task instance "
+        "(see documentatio for details).",
+    )
 
     return parser
 
@@ -55,6 +75,5 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     task: Task = get_task(args.task_id)
-    seqs, masks = task.generate_tasks(max_n_seq=args.n_examples)
-    for seq in seqs:
-        sys.stdout.write(" ".join(seq) + "\n")
+    for _ in range(args.n_examples):
+        sys.stdout.write(" ".join(task.generate_single()[0]) + "\n")

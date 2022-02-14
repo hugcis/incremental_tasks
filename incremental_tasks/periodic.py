@@ -1,8 +1,8 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Set
 
 import numpy as np
 
-from .tasks import BinaryTask, Mask, TaskType, choose_minimal_set
+from .tasks import BinaryTask, Mask, TaskType, choose_minimal_set, SingleTM
 
 
 class Periodic(BinaryTask):
@@ -11,23 +11,16 @@ class Periodic(BinaryTask):
     def __init__(self, lengths: Union[int, List[int]] = [10]):
         super().__init__("periodic", lengths)
 
-    def generate_tasks(
-        self, seq_len: int = 100, max_n_seq: int = 10
-    ) -> Tuple[TaskType, Mask]:
-        tasks = []
-        st = set()
-        for t in self.lengths:
-            for s in range(2**t):
-                ft = "{{0:0{}b}}".format(t)
-                base = [int(i) for i in ft.format(s)]
-                task = base * (seq_len // len(base))
-                task = (task + base[: seq_len - len(task)])[:]
-                task_list = [str(i) for i in task]
-                task_str = "".join(task_list)
-                if task_str not in st:
-                    tasks.append(task_list)
-                    st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq)
+    def generate_single(self, **kwargs) -> SingleTM:
+        seq_len = kwargs.get("seq_len", 100)
+        t = np.random.choice(self.lengths)
+        s = np.random.choice(np.arange(0, 2**t))
+        ft = "{{0:0{}b}}".format(t)
+        base = [int(i) for i in ft.format(s)]
+        task = base * (seq_len // len(base))
+        task = (task + base[: seq_len - len(task)])[:]
+        task_list = [str(i) for i in task]
+        return task_list, list(range(1, len(task_list)))
 
 
 class IncreasingPeriod(BinaryTask):
@@ -38,35 +31,26 @@ class IncreasingPeriod(BinaryTask):
     def __init__(self, lengths: Union[int, List[int]] = [10]):
         super().__init__("inc-per", lengths)
 
-    def generate_tasks(
-        self, seq_len: int = 100, max_n_seq: int = 10
-    ) -> Tuple[TaskType, Mask]:
-        tasks = []
-        st = set()
-        for t in self.lengths:
-            for s in range(2**t):
-                ft = "{{0:0{}b}}".format(t)
-                base = [int(i) for i in ft.format(s)]
-                task = base[:]
-                ct = 2
-                while len(task) < seq_len:
-                    task = (
-                        task
-                        + np.concatenate(
-                            [np.array(base)[:, None] for _ in range(ct)], axis=1
-                        )
-                        .reshape(-1)
-                        .tolist()
-                    )
-                    ct += 1
+    def generate_single(self, **kwargs) -> SingleTM:
+        seq_len = kwargs.get("seq_len", 100)
+        t = np.random.choice(self.lengths)
+        s = np.random.choice(np.arange(0, 2**t))
+        ft = "{{0:0{}b}}".format(t)
+        base = [int(i) for i in ft.format(s)]
+        task = base[:]
+        ct = 2
+        while len(task) < seq_len:
+            task = (
+                task
+                + np.concatenate([np.array(base)[:, None] for _ in range(ct)], axis=1)
+                .reshape(-1)
+                .tolist()
+            )
+            ct += 1
 
-                task = task[:seq_len]
-                task_list = [str(i) for i in task]
-                task_str = "".join(task_list)
-                if task_str not in st:
-                    tasks.append(task_list)
-                    st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq)
+        task = task[:seq_len]
+        task_list = [str(i) for i in task]
+        return task_list, list(range(1, len(task_list)))
 
 
 class RandomPeriodic(BinaryTask):
@@ -75,22 +59,12 @@ class RandomPeriodic(BinaryTask):
     def __init__(self, lengths: Union[int, List[int]]):
         super().__init__("rand-per", lengths)
 
-    def generate_tasks(
-        self, seq_len: int = 100, max_n_seq: int = 10
-    ) -> Tuple[TaskType, Mask]:
-        tasks = []
-        st = set()
-        for t in self.lengths:
-            for _ in range(max_n_seq):
-                seq = np.random.randint(2**t, size=1 + seq_len // t)
-                ft = "{{0:0{}b}}".format(t)
-                task: list[int] = sum(
-                    [[int(i) for i in ft.format(q)] for q in seq], []
-                )[:seq_len]
+    def generate_single(self, **kwargs) -> SingleTM:
+        seq_len = kwargs.get("seq_len", 100)
+        t = np.random.choice(self.lengths)
+        seq = np.random.randint(2**t, size=1 + seq_len // t)
+        ft = "{{0:0{}b}}".format(t)
+        task = [i for q in seq for i in ft.format(q)][:seq_len]
 
-                task_list = [str(i) for i in task]
-                task_str = "".join(task_list)
-                if task_str not in st:
-                    tasks.append(task_list)
-                    st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq)
+        task_list = [str(i) for i in task]
+        return task_list, list(range(1, len(task_list)))
