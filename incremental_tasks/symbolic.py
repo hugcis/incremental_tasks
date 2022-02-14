@@ -1,9 +1,9 @@
 import collections
-from typing import Union, Tuple, List
+from typing import List, Union
 
 import numpy as np
 
-from .tasks import TokenTask, TaskType, Mask, choose_minimal_set, SingleTM
+from .tasks import SingleTM, TokenTask
 
 
 class SymbolCounting(TokenTask):

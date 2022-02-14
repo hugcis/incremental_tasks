@@ -8,7 +8,6 @@ Mask = Optional[List[List[int]]]
 TaskMask = Tuple[TaskType, Mask]
 SingleTM = Tuple[List[str], Optional[List[int]]]
 
-
 def choose_minimal_set(tasks: TaskType, max_n_seq: int, mask: Mask = None) -> TaskMask:
     """Select `max_n_seq` random task/mask pairs from a list."""
     if len(tasks) > max_n_seq:
@@ -50,7 +49,10 @@ class Task(ABC):
         ct = 0
         while len(st) < max_n_seq and ct < 5 * max_n_seq:
             task_list, mask = self.generate_single(**kwargs)
-            task_str = "".join(task_list)
+            if hasattr(self, "separator_symbol"):
+                task_str = getattr(self, "separator_symbol").join(task_list)
+            else:
+                task_str = "".join(task_list)
             if task_str not in st:
                 if mask is not None:
                     masks.append(mask)
@@ -58,6 +60,14 @@ class Task(ABC):
                 st.add(task_str)
             ct += 1
         return choose_minimal_set(tasks, max_n_seq, mask=masks)
+
+    def get_true_output_size(self) -> int:
+        output_space: Set[str] = set()
+        sample_tasks, sample_masks = self.generate_tasks(max_n_seq=500)
+        if sample_masks is not None:
+            for i, task in enumerate(sample_tasks):
+                output_space.update(task[k] for k in sample_masks[i])
+        return len(output_space)
 
     def output_dimension(self) -> int:
         return len(self.dictionary)

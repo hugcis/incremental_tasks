@@ -3,33 +3,7 @@
 import sys
 from argparse import ArgumentParser
 
-from incremental_tasks import (
-    ElementaryLanguage,
-    HardSymbolCounting,
-    IncreasingPeriod,
-    Periodic,
-    SymbolCounting,
-    Task,
-    HarderElementaryLanguage,
-)
-
-ID_TO_TASK = {
-    1: Periodic,
-    2: IncreasingPeriod,
-    5: ElementaryLanguage,
-    3: SymbolCounting,
-    4: HardSymbolCounting,
-    6: HarderElementaryLanguage,
-}
-
-NAME_TO_TASK = {
-    "periodic": Periodic,
-    "inc-per": IncreasingPeriod,
-    "sym-ct": SymbolCounting,
-    "hard-sym-ct": HardSymbolCounting,
-    "qa": ElementaryLanguage,
-    "hard-qa": HarderElementaryLanguage,
-}
+from incremental_tasks import ID_TO_TASK, NAME_TO_TASK, Task
 
 
 def make_parser() -> ArgumentParser:

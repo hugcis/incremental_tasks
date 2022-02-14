@@ -1,8 +1,8 @@
-from typing import List, Tuple, Union, Set
+from typing import List, Union
 
 import numpy as np
 
-from .tasks import BinaryTask, Mask, TaskType, choose_minimal_set, SingleTM
+from .tasks import BinaryTask, SingleTM
 
 
 class Periodic(BinaryTask):

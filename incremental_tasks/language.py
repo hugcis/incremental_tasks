@@ -1,8 +1,8 @@
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import numpy as np
 
-from .tasks import TokenTask, TaskType, choose_minimal_set
+from .tasks import SingleTM, TokenTask
 
 
 def add_no(verb: str, no_names: Optional[list[str]] = None) -> list[str]:
@@ -75,46 +75,34 @@ class ElementaryLanguage(TokenTask):
         ]
         super().__init__("qa", 0, dictionary)
 
-    def generate_tasks(self, max_n_seq: int = 10, **kwargs):
-        del kwargs
-        tasks: TaskType = []
-        mask = []
-        st = set()
-        for _ in range(5 * max_n_seq):
-            current_mask = []
-            verb = np.random.choice(self.verbs)
+    def generate_single(self, **kwargs) -> SingleTM:
+        current_mask = []
+        verb = np.random.choice(self.verbs)
 
-            # Choose a subset of object names to work with
-            subset_size = np.random.randint(1, len(self.object_names))
-            subset = np.random.choice(
-                self.object_names, size=subset_size, replace=False
-            )
+        # Choose a subset of object names to work with
+        subset_size = np.random.randint(1, len(self.object_names))
+        subset = np.random.choice(self.object_names, size=subset_size, replace=False)
 
-            # Decide the yes names and the no names (may be empty)
-            yes = np.random.randint(len(subset))
-            yes_names = np.random.choice(subset, size=yes, replace=False).tolist()
-            if yes_names:
-                yes_names = " AND ".join(yes_names).split(" ")
-            no_names = [i for i in subset if i not in yes_names]
-            if no_names:
-                no_names = " AND ".join(no_names).split(" ")
+        # Decide the yes names and the no names (may be empty)
+        yes = np.random.randint(len(subset))
+        yes_names = np.random.choice(subset, size=yes, replace=False).tolist()
+        if yes_names:
+            yes_names = " AND ".join(yes_names).split(" ")
+        no_names = [i for i in subset if i not in yes_names]
+        if no_names:
+            no_names = " AND ".join(no_names).split(" ")
 
-            # Build the sentence
-            task = make_sentence(verb, yes_names, no_names)
-            tgt = np.random.choice(subset)
-            # Make the answer
-            task += (
-                [self.sentence_term_symbol]
-                + ["DO", "I", verb, tgt, self.query_symbol]
-                + ["YES" if tgt in yes_names else "NO"]
-            )
-            current_mask.append(len(task) - 1)
-            task_str = self.separator_symbol.join(task)
-            if task_str not in st:
-                tasks.append(task)
-                mask.append(current_mask)
-                st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq, mask=mask)
+        # Build the sentence
+        task = make_sentence(verb, yes_names, no_names)
+        tgt = np.random.choice(subset)
+        # Make the answer
+        task += (
+            [self.sentence_term_symbol]
+            + ["DO", "I", verb, tgt, self.query_symbol]
+            + ["YES" if tgt in yes_names else "NO"]
+        )
+        current_mask.append(len(task) - 1)
+        return task, current_mask
 
 
 class HarderElementaryLanguage(ElementaryLanguage):
@@ -170,72 +158,60 @@ class ElementaryLanguageWithWorldDef(ElementaryLanguage):
         super().__init__(object_names=object_names, verbs=verbs)
         self.name = "qa-world-def"
 
-    def generate_tasks(self, max_n_seq: int = 10, **kwargs):
-        del kwargs
-        tasks: TaskType = []
-        mask = []
-        st = set()
-        for _ in range(max_n_seq):
-            current_mask = []
+    def generate_single(self, **kwargs) -> SingleTM:
+        current_mask = []
 
-            # Choose a subset of object names to work with
-            subset_size = np.random.randint(1, len(self.object_names))
-            subset = np.random.choice(
-                self.object_names, size=subset_size, replace=False
-            )
+        # Choose a subset of object names to work with
+        subset_size = np.random.randint(1, len(self.object_names))
+        subset = np.random.choice(self.object_names, size=subset_size, replace=False)
 
-            # Choose the number of verbs to use
-            n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
-            verbs = np.random.choice(self.verbs, size=n_verbs, replace=False)
+        # Choose the number of verbs to use
+        n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
+        verbs = np.random.choice(self.verbs, size=n_verbs, replace=False)
 
-            name_map: Dict[str, list[str]] = {}
-            indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
-            indices = np.sort(indices)
-            for i, verb in enumerate(verbs):
-                right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
-                name_map[verb] = subset[indices[i] : right].tolist()
+        name_map: Dict[str, list[str]] = {}
+        indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
+        indices = np.sort(indices)
+        for i, verb in enumerate(verbs):
+            right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
+            name_map[verb] = subset[indices[i] : right].tolist()
 
-            task = []
-            yes_map: Dict[str, list[str]] = {}
-            no_map: Dict[str, list[str]] = {}
-            first = True
-            for verb in verbs:
-                if not first:
-                    task += [self.sentence_term_symbol]
-                else:
-                    first = False
-                # Decide the yes names and the no names (may be empty)
-                yes = np.random.randint(len(name_map[verb]) + 1)
-                yes_names = np.random.choice(
-                    name_map[verb], size=yes, replace=False
-                ).tolist()
-                yes_map[verb] = yes_names
-                if yes_names:
-                    yes_names = " AND ".join(yes_names).split(" ")
-                no_names = [i for i in name_map[verb] if i not in yes_names]
-                no_map[verb] = no_names
-                if no_names:
-                    no_names = " AND ".join(no_names).split(" ")
+        task = []
+        yes_map: Dict[str, list[str]] = {}
+        no_map: Dict[str, list[str]] = {}
+        first = True
+        for verb in verbs:
+            if not first:
+                task += [self.sentence_term_symbol]
+            else:
+                first = False
+            # Decide the yes names and the no names (may be empty)
+            yes = np.random.randint(len(name_map[verb]) + 1)
+            yes_names = np.random.choice(
+                name_map[verb], size=yes, replace=False
+            ).tolist()
+            yes_map[verb] = yes_names
+            if yes_names:
+                yes_names = " AND ".join(yes_names).split(" ")
+            no_names = [i for i in name_map[verb] if i not in yes_names]
+            no_map[verb] = no_names
+            if no_names:
+                no_names = " AND ".join(no_names).split(" ")
 
-                # Build the sentence
-                task += make_sentence(verb, yes_names, no_names)
+            # Build the sentence
+            task += make_sentence(verb, yes_names, no_names)
 
-            # Choose which verb/name we will ask about
-            question_verb = str(np.random.choice(verbs))
-            tgt = np.random.choice(name_map[question_verb])
-            # Make the answer
-            task += (
-                [self.sentence_term_symbol]
-                + ["DO", "I", question_verb, tgt, self.query_symbol]
-                + ["YES" if tgt in yes_map[question_verb] else "NO"]
-            )
-            current_mask.append(len(task) - 1)
-            task_str = self.separator_symbol.join(task)
-            if task_str not in st:
-                tasks.append(task)
-                mask.append(current_mask)
-                st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq, mask=mask)
+        # Choose which verb/name we will ask about
+        question_verb = str(np.random.choice(verbs))
+        tgt = np.random.choice(name_map[question_verb])
+        # Make the answer
+        task += (
+            [self.sentence_term_symbol]
+            + ["DO", "I", question_verb, tgt, self.query_symbol]
+            + ["YES" if tgt in yes_map[question_verb] else "NO"]
+        )
+        current_mask.append(len(task) - 1)
+        return task, current_mask
 
 
 NUMBERS = [
@@ -290,94 +266,82 @@ class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
         self.dictionary += numbers
         self.dictionary += ["HOW", "MANY", "PEOPLE"]
 
-    def generate_tasks(self, max_n_seq: int = 10, **kwargs):
-        del kwargs
-        tasks: TaskType = []
-        mask = []
-        st = set()
-        for _ in range(max_n_seq):
-            current_mask = []
+    def generate_single(self, **kwargs) -> SingleTM:
+        current_mask = []
 
-            # Choose a subset of object names to work with
-            subset_size = np.random.randint(1, len(self.object_names))
-            subset = np.random.choice(
-                self.object_names, size=subset_size, replace=False
+        # Choose a subset of object names to work with
+        subset_size = np.random.randint(1, len(self.object_names))
+        subset = np.random.choice(self.object_names, size=subset_size, replace=False)
+
+        # Choose the number of verbs to use
+        n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
+        verbs = np.random.choice(self.verbs, size=n_verbs, replace=False)
+
+        name_map: Dict[str, list[str]] = {}
+        indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
+        indices = np.sort(indices)
+        for i, verb in enumerate(verbs):
+            right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
+            name_map[verb] = subset[indices[i] : right].tolist()
+
+        task = []
+        yes_map: Dict[str, list[str]] = {}
+        no_map: Dict[str, list[str]] = {}
+        first = True
+        for verb in verbs:
+            if not first:
+                task += [self.sentence_term_symbol]
+            else:
+                first = False
+            # Decide the yes names and the no names (may be empty)
+            yes = np.random.randint(len(name_map[verb]) + 1)
+            yes_names = np.random.choice(
+                name_map[verb], size=yes, replace=False
+            ).tolist()
+            yes_map[verb] = yes_names
+            if yes_names:
+                yes_names = " AND ".join(yes_names).split(" ")
+            no_names = [i for i in name_map[verb] if i not in yes_names]
+            no_map[verb] = no_names
+            if no_names:
+                no_names = " AND ".join(no_names).split(" ")
+
+            # Build the sentence
+            task += make_sentence(verb, yes_names, no_names)
+
+        coin_up = np.random.random() > 0.5
+        if coin_up:
+            # Choose which verb we will ask about
+            question_verb = str(np.random.choice(verbs))
+            # Count how many
+            tgt_len = len(yes_map[question_verb])
+            # Make the answer
+            task += (
+                [self.sentence_term_symbol]
+                + [
+                    "HOW",
+                    "MANY",
+                    "PEOPLE",
+                    "DO",
+                    "I",
+                    question_verb,
+                    self.query_symbol,
+                ]
+                + [self.number_map[tgt_len]]
             )
 
-            # Choose the number of verbs to use
-            n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
-            verbs = np.random.choice(self.verbs, size=n_verbs, replace=False)
-
-            name_map: Dict[str, list[str]] = {}
-            indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
-            indices = np.sort(indices)
-            for i, verb in enumerate(verbs):
-                right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
-                name_map[verb] = subset[indices[i] : right].tolist()
-
-            task = []
-            yes_map: Dict[str, list[str]] = {}
-            no_map: Dict[str, list[str]] = {}
-            first = True
-            for verb in verbs:
-                if not first:
-                    task += [self.sentence_term_symbol]
-                else:
-                    first = False
-                # Decide the yes names and the no names (may be empty)
-                yes = np.random.randint(len(name_map[verb]) + 1)
-                yes_names = np.random.choice(
-                    name_map[verb], size=yes, replace=False
-                ).tolist()
-                yes_map[verb] = yes_names
-                if yes_names:
-                    yes_names = " AND ".join(yes_names).split(" ")
-                no_names = [i for i in name_map[verb] if i not in yes_names]
-                no_map[verb] = no_names
-                if no_names:
-                    no_names = " AND ".join(no_names).split(" ")
-
-                # Build the sentence
-                task += make_sentence(verb, yes_names, no_names)
-
-            coin_up = np.random.random() > 0.5
-            if coin_up:
-                # Choose which verb we will ask about
-                question_verb = str(np.random.choice(verbs))
-                # Count how many
-                tgt = len(yes_map[question_verb])
-                # Make the answer
-                task += (
-                    [self.sentence_term_symbol]
-                    + [
-                        "HOW",
-                        "MANY",
-                        "PEOPLE",
-                        "DO",
-                        "I",
-                        question_verb,
-                        self.query_symbol,
-                    ]
-                    + [self.number_map[tgt]]
-                )
-
-            else:
-                # Choose which verb/name we will ask about
-                question_verb = str(np.random.choice(verbs))
-                tgt = np.random.choice(name_map[question_verb])
-                # Make the answer
-                task += (
-                    [self.sentence_term_symbol]
-                    + ["DO", "I", question_verb, tgt, self.query_symbol]
-                    + ["YES" if tgt in yes_map[question_verb] else "NO"]
-                )
-            current_mask.append(len(task) - 1)
-            task_str = self.separator_symbol.join(task)
-            if task_str not in st:
-                tasks.append(task)
-                mask.append(current_mask)
-                st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq, mask=mask)
+        else:
+            # Choose which verb/name we will ask about
+            question_verb = str(np.random.choice(verbs))
+            tgt = np.random.choice(name_map[question_verb])
+            # Make the answer
+            task += (
+                [self.sentence_term_symbol]
+                + ["DO", "I", question_verb, tgt, self.query_symbol]
+                + ["YES" if tgt in yes_map[question_verb] else "NO"]
+            )
+        current_mask.append(len(task) - 1)
+        return task, current_mask
 
 
 def make_adj_objs(
@@ -441,92 +405,78 @@ class AdjectiveLanguage(TokenTask):
         dictionary += [query_symbol, sentence_term_symbol, "YES", "NO"]
         super().__init__("adj-qa", 0, dictionary)
 
-    def generate_tasks(self, max_n_seq: int = 10, **kwargs):
-        del kwargs
-        tasks: TaskType = []
-        mask = []
-        st = set()
-        for _ in range(max_n_seq):
-            current_mask = []
+    def generate_single(self, **kwargs) -> SingleTM:
+        current_mask = []
 
-            # Choose a subset of object names to work with
-            subset_size = np.random.randint(1, len(self.object_names))
-            subset: list[str] = np.random.choice(
-                self.object_names, size=subset_size, replace=False
-            ).tolist()
-            adj_subset = make_adj_objs(self.size_adj, self.color_adj, subset)
+        # Choose a subset of object names to work with
+        subset_size = np.random.randint(1, len(self.object_names))
+        subset: list[str] = np.random.choice(
+            self.object_names, size=subset_size, replace=False
+        ).tolist()
+        adj_subset = make_adj_objs(self.size_adj, self.color_adj, subset)
 
-            # Choose the number of verbs to use
-            n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
-            verbs: list[str] = np.random.choice(
-                self.verbs, size=n_verbs, replace=False
-            ).tolist()
+        # Choose the number of verbs to use
+        n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
+        verbs: list[str] = np.random.choice(
+            self.verbs, size=n_verbs, replace=False
+        ).tolist()
 
-            name_map: Dict[str, list[list[str]]] = {}
-            indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
-            indices = np.sort(indices)
-            for i, verb in enumerate(verbs):
-                right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
-                name_map[verb] = adj_subset[indices[i] : right]
+        name_map: Dict[str, list[list[str]]] = {}
+        indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
+        indices = np.sort(indices)
+        for i, verb in enumerate(verbs):
+            right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
+            name_map[verb] = adj_subset[indices[i] : right]
 
-            task = []
-            yes_map: Dict[str, list[list[str]]] = {}
-            no_map: Dict[str, list[list[str]]] = {}
-            first = True
-            for verb in verbs:
-                yes_names, no_names = None, None
-                if not first:
-                    task += [self.sentence_term_symbol]
-                else:
-                    first = False
-                # Decide the yes names and the no names (may be empty)
-                yes = np.random.randint(len(name_map[verb]) + 1)
-                pre_yes_names: list[list[str]] = [
-                    name_map[verb][g]
-                    for g in np.random.choice(
-                        range(len(name_map[verb])), size=yes, replace=False
-                    )
+        task = []
+        yes_map: Dict[str, list[list[str]]] = {}
+        no_map: Dict[str, list[list[str]]] = {}
+        first = True
+        for verb in verbs:
+            yes_names, no_names = None, None
+            if not first:
+                task += [self.sentence_term_symbol]
+            else:
+                first = False
+            # Decide the yes names and the no names (may be empty)
+            yes = np.random.randint(len(name_map[verb]) + 1)
+            pre_yes_names: list[list[str]] = [
+                name_map[verb][g]
+                for g in np.random.choice(
+                    range(len(name_map[verb])), size=yes, replace=False
+                )
+            ]
+            yes_map[verb] = pre_yes_names
+            if pre_yes_names:
+                flatten_yes_names = [
+                    make_prefix(prefixed_name[0])
+                    + self.separator_symbol
+                    + " ".join(prefixed_name)
+                    for prefixed_name in pre_yes_names
                 ]
-                yes_map[verb] = pre_yes_names
-                if pre_yes_names:
-                    flatten_yes_names = [
-                        make_prefix(prefixed_name[0])
-                        + self.separator_symbol
-                        + " ".join(prefixed_name)
-                        for prefixed_name in pre_yes_names
-                    ]
-                    yes_names = " AND ".join(flatten_yes_names).split(" ")
-                pre_no_names = [
-                    i
-                    for i in name_map[verb]
-                    if i[0] not in [n[0] for n in pre_yes_names]
+                yes_names = " AND ".join(flatten_yes_names).split(" ")
+            pre_no_names = [
+                i for i in name_map[verb] if i[0] not in [n[0] for n in pre_yes_names]
+            ]
+            no_map[verb] = pre_no_names
+            if pre_no_names:
+                flatten_no_names = [
+                    make_prefix(prefixed_name[0])
+                    + self.separator_symbol
+                    + " ".join(prefixed_name)
+                    for prefixed_name in pre_no_names
                 ]
-                no_map[verb] = pre_no_names
-                if pre_no_names:
-                    flatten_no_names = [
-                        make_prefix(prefixed_name[0])
-                        + self.separator_symbol
-                        + " ".join(prefixed_name)
-                        for prefixed_name in pre_no_names
-                    ]
-                    no_names = " AND ".join(flatten_no_names).split(" ")
+                no_names = " AND ".join(flatten_no_names).split(" ")
 
-                # Build the sentence
-                task += make_sentence(verb, yes_names, no_names)
+            # Build the sentence
+            task += make_sentence(verb, yes_names, no_names)
 
-            # Add the question part
-            task += self.construct_question(name_map, yes_map, verbs)
+        # Add the question part
+        task += self.construct_question(name_map, yes_map, verbs)
 
-            # Last symbol is the one to predict
-            current_mask.append(len(task) - 1)
-
-            # Check unicity
-            task_str = self.separator_symbol.join(task)
-            if task_str not in st:
-                tasks.append(task)
-                mask.append(current_mask)
-                st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq, mask=mask)
+        # Last symbol is the one to predict
+        current_mask.append(len(task) - 1)
+        return task, current_mask
 
     def construct_question(
         self,
@@ -606,99 +556,85 @@ class AdjectiveLanguageCounting(TokenTask):
         dictionary += [query_symbol, sentence_term_symbol, "YES", "NO"]
         super().__init__("adj-qa-ct", 0, dictionary)
 
-    def generate_tasks(self, max_n_seq: int = 10, **kwargs):
-        del kwargs
-        tasks: TaskType = []
-        mask = []
-        st = set()
-        for _ in range(max_n_seq):
-            current_mask = []
+    def generate_single(self, **kwargs) -> SingleTM:
+        current_mask = []
 
-            # Choose a subset of object names to work with
-            subset_size = np.random.randint(1, len(self.object_names))
-            subset: list[str] = np.random.choice(
-                self.object_names, size=subset_size, replace=False
-            ).tolist()
-            adj_subset = make_adj_objs(self.size_adj, self.color_adj, subset)
+        # Choose a subset of object names to work with
+        subset_size = np.random.randint(1, len(self.object_names))
+        subset: list[str] = np.random.choice(
+            self.object_names, size=subset_size, replace=False
+        ).tolist()
+        adj_subset = make_adj_objs(self.size_adj, self.color_adj, subset)
 
-            # Choose the number of verbs to use
-            n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
-            verbs: list[str] = np.random.choice(
-                self.verbs, size=n_verbs, replace=False
-            ).tolist()
+        # Choose the number of verbs to use
+        n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
+        verbs: list[str] = np.random.choice(
+            self.verbs, size=n_verbs, replace=False
+        ).tolist()
 
-            name_map: Dict[str, list[list[str]]] = {}
-            indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
-            indices = np.sort(indices)
-            for i, verb in enumerate(verbs):
-                right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
-                name_map[verb] = adj_subset[indices[i] : right]
+        name_map: Dict[str, list[list[str]]] = {}
+        indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
+        indices = np.sort(indices)
+        for i, verb in enumerate(verbs):
+            right = len(subset) if i >= len(verbs) - 1 else indices[i + 1]
+            name_map[verb] = adj_subset[indices[i] : right]
 
-            task = []
-            yes_map: Dict[str, list[list[str]]] = {}
-            no_map: Dict[str, list[list[str]]] = {}
-            first = True
-            for verb in verbs:
-                yes_names, no_names = None, None
-                if not first:
-                    task += [self.sentence_term_symbol]
-                else:
-                    first = False
-                # Decide the yes names and the no names (may be empty)
-                yes = np.random.randint(len(name_map[verb]) + 1)
-                pre_yes_names: list[list[str]] = [
-                    name_map[verb][g]
-                    for g in np.random.choice(
-                        range(len(name_map[verb])), size=yes, replace=False
-                    )
+        task = []
+        yes_map: Dict[str, list[list[str]]] = {}
+        no_map: Dict[str, list[list[str]]] = {}
+        first = True
+        for verb in verbs:
+            yes_names, no_names = None, None
+            if not first:
+                task += [self.sentence_term_symbol]
+            else:
+                first = False
+            # Decide the yes names and the no names (may be empty)
+            yes = np.random.randint(len(name_map[verb]) + 1)
+            pre_yes_names: list[list[str]] = [
+                name_map[verb][g]
+                for g in np.random.choice(
+                    range(len(name_map[verb])), size=yes, replace=False
+                )
+            ]
+            yes_map[verb] = pre_yes_names
+            if pre_yes_names:
+                flatten_yes_names = [
+                    make_prefix(prefixed_name[0])
+                    + self.separator_symbol
+                    + " ".join(prefixed_name)
+                    for prefixed_name in pre_yes_names
                 ]
-                yes_map[verb] = pre_yes_names
-                if pre_yes_names:
-                    flatten_yes_names = [
-                        make_prefix(prefixed_name[0])
-                        + self.separator_symbol
-                        + " ".join(prefixed_name)
-                        for prefixed_name in pre_yes_names
-                    ]
-                    yes_names = " AND ".join(flatten_yes_names).split(" ")
-                pre_no_names = [
-                    i
-                    for i in name_map[verb]
-                    if i[0] not in [n[0] for n in pre_yes_names]
+                yes_names = " AND ".join(flatten_yes_names).split(" ")
+            pre_no_names = [
+                i for i in name_map[verb] if i[0] not in [n[0] for n in pre_yes_names]
+            ]
+            no_map[verb] = pre_no_names
+            if pre_no_names:
+                flatten_no_names = [
+                    make_prefix(prefixed_name[0])
+                    + self.separator_symbol
+                    + " ".join(prefixed_name)
+                    for prefixed_name in pre_no_names
                 ]
-                no_map[verb] = pre_no_names
-                if pre_no_names:
-                    flatten_no_names = [
-                        make_prefix(prefixed_name[0])
-                        + self.separator_symbol
-                        + " ".join(prefixed_name)
-                        for prefixed_name in pre_no_names
-                    ]
-                    no_names = " AND ".join(flatten_no_names).split(" ")
+                no_names = " AND ".join(flatten_no_names).split(" ")
 
-                # Build the sentence
-                task += make_sentence(verb, yes_names, no_names)
+            # Build the sentence
+            task += make_sentence(verb, yes_names, no_names)
 
-            # Add the question part
-            question_set = set()
-            question_list = []
-            for _ in range(np.random.randint(1, self.n_questions_max)):
-                question = self.construct_question(name_map, yes_map, verbs)
-                if self.separator_symbol.join(question) not in question_set:
-                    question_set.add(self.separator_symbol.join(question))
-                    question_list.append(question)
-            for question in question_list:
-                task += question
-                # Last symbol is the one to predict
-                current_mask.append(len(task) - 1)
-
-            # Check unicity
-            task_str = self.separator_symbol.join(task)
-            if task_str not in st:
-                tasks.append(task)
-                mask.append(current_mask)
-                st.add(task_str)
-        return choose_minimal_set(tasks, max_n_seq, mask=mask)
+        # Add the question part
+        question_set = set()
+        question_list = []
+        for _ in range(np.random.randint(1, self.n_questions_max)):
+            question = self.construct_question(name_map, yes_map, verbs)
+            if self.separator_symbol.join(question) not in question_set:
+                question_set.add(self.separator_symbol.join(question))
+                question_list.append(question)
+        for question in question_list:
+            task += question
+            # Last symbol is the one to predict
+            current_mask.append(len(task) - 1)
+        return task, current_mask
 
     def construct_question(
         self,

@@ -41,3 +41,29 @@ __all__ = [
     "TaskType",
     "AdjectiveLanguageCounting",
 ]
+
+ID_TO_TASK = {
+    1: Periodic,
+    2: IncreasingPeriod,
+    5: ElementaryLanguage,
+    3: SymbolCounting,
+    4: HardSymbolCounting,
+    6: HarderElementaryLanguage,
+    7: ElementaryLanguageWithWorldDef,
+    8: ElementaryLanguageWithWorldDefCounting,
+    9: AdjectiveLanguage,
+    10: AdjectiveLanguageCounting,
+}
+
+NAME_TO_TASK = {
+    "periodic": Periodic,
+    "inc-per": IncreasingPeriod,
+    "sym-ct": SymbolCounting,
+    "hard-sym-ct": HardSymbolCounting,
+    "qa": ElementaryLanguage,
+    "hard-qa": HarderElementaryLanguage,
+    "qa-world-def": ElementaryLanguageWithWorldDef,
+    "qa-world-def-ct": ElementaryLanguageWithWorldDefCounting,
+    "adj-qa": AdjectiveLanguage,
+    "adj-qa-ct": AdjectiveLanguageCounting,
+}
