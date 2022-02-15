@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "incremental-tasks"
+name = "incremental_tasks"
 version = "0.1.0"
 description = ""
 authors = ["hugcis <hmj.cisneros@gmail.com>"]
