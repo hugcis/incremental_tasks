@@ -8,6 +8,7 @@ Mask = Optional[List[List[int]]]
 TaskMask = Tuple[TaskType, Mask]
 SingleTM = Tuple[List[str], Optional[List[int]]]
 
+
 def choose_minimal_set(tasks: TaskType, max_n_seq: int, mask: Mask = None) -> TaskMask:
     """Select `max_n_seq` random task/mask pairs from a list."""
     if len(tasks) > max_n_seq:
@@ -23,6 +24,8 @@ def choose_minimal_set(tasks: TaskType, max_n_seq: int, mask: Mask = None) -> Ta
         else:
             return tasks, mask
 
+def get_idx(task: List[str], dictionary: List[str]) -> List[int]:
+    return [dictionary.index(s) for s in task]
 
 class Task(ABC):
     """
@@ -68,6 +71,15 @@ class Task(ABC):
             for i, task in enumerate(sample_tasks):
                 output_space.update(task[k] for k in sample_masks[i])
         return len(output_space)
+
+    def get_n_items_per_seq(self) -> float:
+        _, sample_masks = self.generate_tasks(max_n_seq=500)
+        if sample_masks is not None:
+            return np.mean([len(i) for i in sample_masks])
+        else:
+            raise ValueError(
+                "Cannot estimate number of items per sequence without masking"
+            )
 
     def output_dimension(self) -> int:
         return len(self.dictionary)
@@ -150,7 +162,9 @@ class TokenTask(Task):
 
 
 class BinarizedTask(Task):
-    """Binarized version of a token class."""
+    """Binarized version of a token class. This class could be though of as a
+       "decorator" that will turn a normal Task into a binarized version
+    """
 
     def __init__(self, base_task: TokenTask):
         super().__init__(f"bin_{base_task.name}")
