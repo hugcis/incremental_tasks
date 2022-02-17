@@ -55,15 +55,15 @@ ID_TO_TASK = {
     10: AdjectiveLanguageCounting,
 }
 
-NAME_TO_TASK = {
-    "periodic": Periodic,
-    "inc-per": IncreasingPeriod,
-    "sym-ct": SymbolCounting,
-    "hard-sym-ct": HardSymbolCounting,
-    "qa": ElementaryLanguage,
-    "hard-qa": HarderElementaryLanguage,
-    "qa-world-def": ElementaryLanguageWithWorldDef,
-    "qa-world-def-ct": ElementaryLanguageWithWorldDefCounting,
-    "adj-qa": AdjectiveLanguage,
-    "adj-qa-ct": AdjectiveLanguageCounting,
+NAME_TO_ID = {
+    "periodic": 1,
+    "inc-per": 2,
+    "sym-ct": 3,
+    "hard-sym-ct": 4,
+    "qa": 5,
+    "hard-qa": 6,
+    "qa-world-def": 7,
+    "qa-world-def-ct": 8,
+    "adj-qa": 9,
+    "adj-qa-ct": 10,
 }

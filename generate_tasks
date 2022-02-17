@@ -8,7 +8,7 @@ from typing import Union
 
 import numpy as np
 
-from incremental_tasks import ID_TO_TASK, NAME_TO_TASK, Task
+from incremental_tasks import ID_TO_TASK, NAME_TO_ID, Task
 from incremental_tasks.base import get_idx
 
 
@@ -62,9 +62,10 @@ def make_parser() -> ArgumentParser:
 
 def get_task(task_id: Union[str, int]) -> Task:
     if isinstance(task_id, int) or task_id.isdigit():
-        return ID_TO_TASK[int(task_id)]()
+        task_id_int = int(task_id)
     else:
-        return NAME_TO_TASK[task_id]()
+        task_id_int = NAME_TO_ID[task_id]
+    return ID_TO_TASK[task_id_int]()
 
 
 if __name__ == "__main__":
@@ -97,29 +98,55 @@ if __name__ == "__main__":
         gen_fn = gen_auto
 
     if args.interactive:
-        while True:
-            task_gen, mask = gen_fn()
-            task_list = list(task_gen)
-            assert mask is not None
-            qs_task_list = [
-                s if n not in mask else "\033[94m\033[1m{?}\033[0m\033[0m"
-                for n, s in enumerate(task_list)
-            ]
-            sys.stdout.write(" ".join(qs_task_list) + "\n")
+        if args.task_id is None:
+            current_id = 0
+        else:
+            current_id = args.task_id
+        while current_id < max(ID_TO_TASK.keys()):
+            correct_in_a_row = 0
+            task = get_task(current_id)
+            while correct_in_a_row < 5:
+                task_gen, mask = gen_fn()
+                task_list = list(task_gen)
+                assert mask is not None
 
-            answer = input("Type you answers (space separated) ").split(" ")
-            as_task_list = []
-            ct = 0
-            for n, s in enumerate(task_list):
-                if n not in mask:
-                    as_task_list.append(s)
+                mask = sorted(mask)
+                if len(mask) > 6:
+                    stop_idx = mask[5]
+                    mask = mask[:6]
+                    task_list = task_list[:stop_idx]
+
+                qs_task_list = [
+                    s if n not in mask else "\033[94m\033[1m{?}\033[0m\033[0m"
+                    for n, s in enumerate(task_list)
+                ]
+                sys.stdout.write(70 * "=" + "\n")
+                sys.stdout.write(" ".join(qs_task_list) + "\n")
+
+                answer = input("Type you answers (space separated) ").split(" ")
+                as_task_list = []
+                ct = 0
+                good = True
+                for n, s in enumerate(task_list):
+                    if n not in mask:
+                        as_task_list.append(s)
+                    else:
+                        base = f"\033[1m{s}\033[0m\033[0m"
+                        if ct < len(answer) and s == answer[ct]:
+                            as_task_list.append("\033[92m" + base)
+                        else:
+                            as_task_list.append("\033[91m" + base)
+                            good = False
+                        ct += 1
+                if good:
+                    sys.stdout.write("OK!\n")
+                    correct_in_a_row += 1
                 else:
-                    as_task_list.append(
-                        ("\033[92m" if s == answer[ct] else "\033[91m")
-                        + f"\033[1m{s}\033[0m\033[0m"
-                    )
-                    ct += 1
-            sys.stdout.write(" ".join(as_task_list) + "\n\n")
+                    sys.stdout.write("Wrong! right answer was:\n")
+                    correct_in_a_row = 0
+                sys.stdout.write(" ".join(as_task_list) + "\n\n")
+            current_id += 1
+        print("Congrats you finished the game!")
 
     for _ in range(args.n_examples):
         task_list, mask = gen_fn()

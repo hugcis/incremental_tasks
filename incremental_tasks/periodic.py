@@ -20,7 +20,8 @@ class Periodic(BinaryTask):
         task = base * (seq_len // len(base))
         task = (task + base[: seq_len - len(task)])[:]
         task_list = [str(i) for i in task]
-        return task_list, list(range(1, len(task_list)))
+        masking_limit = np.random.randint(0, max(t - 1, 1))
+        return task_list, list(range(2 * t + masking_limit, len(task_list)))
 
 
 class IncreasingPeriod(BinaryTask):
@@ -50,7 +51,8 @@ class IncreasingPeriod(BinaryTask):
 
         task = task[:seq_len]
         task_list = [str(i) for i in task]
-        return task_list, list(range(1, len(task_list)))
+        masking_limit = np.random.randint(0, max(t - 1, 1))
+        return task_list, list(range(3 * t + masking_limit, len(task_list)))
 
 
 class RandomPeriodic(BinaryTask):
