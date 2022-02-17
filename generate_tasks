@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """The task generator."""
+import random
+import string
 import sys
 from argparse import ArgumentParser
+from typing import Union
+
+import numpy as np
 
 from incremental_tasks import ID_TO_TASK, NAME_TO_TASK, Task
+from incremental_tasks.base import get_idx
 
 
 def make_parser() -> ArgumentParser:
@@ -12,9 +18,11 @@ def make_parser() -> ArgumentParser:
         "You can use it to generate the tasks and use the benchmark."
     )
     parser.add_argument(
-        "task_id",
+        "-i",
+        "--task_id",
         metavar="ID",
         type=str,
+        default=None,
         help="The ID of the task to generate sentences for.",
     )
     parser.add_argument(
@@ -33,12 +41,27 @@ def make_parser() -> ArgumentParser:
         help="Optional additional arguments to be passed to the task instance "
         "(see documentatio for details).",
     )
+    parser.add_argument(
+        "--human-eval",
+        action="store_true",
+        help="The human evaluation generation mode converts all human readable "
+        "symbols into a random symbol to simulate how a predictive model has no "
+        "prior notion of language to solve the tasks",
+    )
+    parser.add_argument(
+        "--seed", type=int, help="Provide a random seed for reproducibility"
+    )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Try to solve the tasks yourself with this interactive game",
+    )
 
     return parser
 
 
-def get_task(task_id: str) -> Task:
-    if task_id.isdigit():
+def get_task(task_id: Union[str, int]) -> Task:
+    if isinstance(task_id, int) or task_id.isdigit():
         return ID_TO_TASK[int(task_id)]()
     else:
         return NAME_TO_TASK[task_id]()
@@ -47,7 +70,57 @@ def get_task(task_id: str) -> Task:
 if __name__ == "__main__":
     argparser = make_parser()
     args = argparser.parse_args()
+    if hasattr(args, "seed"):
+        random.seed(args.seed)
+        np.random.seed(args.seed)
 
-    task: Task = get_task(args.task_id)
+    if args.task_id is None:
+        task = get_task(random.randint(1, len(ID_TO_TASK)))
+    else:
+        task = get_task(args.task_id)
+
+    if args.human_eval:
+        symbol_map = list(string.ascii_lowercase + string.ascii_uppercase)
+        random.shuffle(symbol_map)
+
+        def gen_human_eval():
+            task_list, mask = task.generate_single()
+            return (symbol_map[x] for x in get_idx(task_list, task.dictionary)), mask
+
+        gen_fn = gen_human_eval
+    else:
+
+        def gen_auto():
+            task_list, mask = task.generate_single()
+            return task_list, mask
+
+        gen_fn = gen_auto
+
+    if args.interactive:
+        while True:
+            task_gen, mask = gen_fn()
+            task_list = list(task_gen)
+            assert mask is not None
+            qs_task_list = [
+                s if n not in mask else "\033[94m\033[1m{?}\033[0m\033[0m"
+                for n, s in enumerate(task_list)
+            ]
+            sys.stdout.write(" ".join(qs_task_list) + "\n")
+
+            answer = input("Type you answers (space separated) ").split(" ")
+            as_task_list = []
+            ct = 0
+            for n, s in enumerate(task_list):
+                if n not in mask:
+                    as_task_list.append(s)
+                else:
+                    as_task_list.append(
+                        ("\033[92m" if s == answer[ct] else "\033[91m")
+                        + f"\033[1m{s}\033[0m\033[0m"
+                    )
+                    ct += 1
+            sys.stdout.write(" ".join(as_task_list) + "\n\n")
+
     for _ in range(args.n_examples):
-        sys.stdout.write(" ".join(task.generate_single()[0]) + "\n")
+        task_list, mask = gen_fn()
+        sys.stdout.write(" ".join(task_list) + "\n")
