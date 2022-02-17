@@ -64,9 +64,9 @@ class RandomPeriodic(BinaryTask):
     def generate_single(self, **kwargs) -> SingleTM:
         seq_len = kwargs.get("seq_len", 100)
         t = np.random.choice(self.lengths)
-        seq = np.random.randint(2**t, size=1 + seq_len // t)
+        random_seq = np.random.randint(2**t, size=1 + seq_len // t)
         ft = "{{0:0{}b}}".format(t)
-        task = [i for q in seq for i in ft.format(q)][:seq_len]
+        task = [i for q in random_seq for i in ft.format(q)][:seq_len]
 
         task_list = [str(i) for i in task]
         return task_list, list(range(1, len(task_list)))
