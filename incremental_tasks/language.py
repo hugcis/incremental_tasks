@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from .tasks import SingleTM, TokenTask
+from .base import SingleTM, TokenTask
 
 
 def add_no(verb: str, no_names: Optional[list[str]] = None) -> list[str]:
@@ -76,6 +76,7 @@ class ElementaryLanguage(TokenTask):
         super().__init__("qa", 0, dictionary)
 
     def generate_single(self, **kwargs) -> SingleTM:
+        del kwargs
         current_mask = []
         verb = np.random.choice(self.verbs)
 
@@ -84,7 +85,7 @@ class ElementaryLanguage(TokenTask):
         subset = np.random.choice(self.object_names, size=subset_size, replace=False)
 
         # Decide the yes names and the no names (may be empty)
-        yes = np.random.randint(len(subset))
+        yes = np.random.randint(len(subset) + 1)
         yes_names = np.random.choice(subset, size=yes, replace=False).tolist()
         if yes_names:
             yes_names = " AND ".join(yes_names).split(" ")
