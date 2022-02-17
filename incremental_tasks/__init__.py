@@ -9,7 +9,7 @@ from .language import (
 )
 from .periodic import IncreasingPeriod, Periodic, RandomPeriodic
 from .symbolic import HardSymbolCounting, SymbolCounting
-from .tasks import (
+from .base import (
     BinarizedTask,
     BinaryTask,
     HybridTask,

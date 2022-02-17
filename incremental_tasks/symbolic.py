@@ -3,7 +3,7 @@ from typing import List, Union
 
 import numpy as np
 
-from .tasks import SingleTM, TokenTask
+from .base import SingleTM, TokenTask
 
 
 class SymbolCounting(TokenTask):

@@ -2,7 +2,7 @@ from typing import List, Union
 
 import numpy as np
 
-from .tasks import BinaryTask, SingleTM
+from .base import BinaryTask, SingleTM
 
 
 class Periodic(BinaryTask):
