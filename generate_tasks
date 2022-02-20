@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     if args.interactive:
         if args.task_id is None:
-            current_id = 0
+            current_id = 1
         else:
             current_id = args.task_id
         while current_id < max(ID_TO_TASK.keys()):
@@ -151,3 +151,5 @@ if __name__ == "__main__":
     for _ in range(args.n_examples):
         task_list, mask = gen_fn()
         sys.stdout.write(" ".join(task_list) + "\n")
+        if mask is not None:
+            sys.stdout.write(" ".join(map(str, mask)) + "\n")
