@@ -55,6 +55,19 @@ ID_TO_TASK = {
     10: AdjectiveLanguageCounting,
 }
 
+ID_TO_PRETTY_NAME = {
+    1: "Periodic",
+    2: "Incremental periodic",
+    5: "Basic QA",
+    3: "Symbol counting",
+    4: "Pattern counting",
+    6: "Harder QA",
+    7: "QA with world definition",
+    8: "QA with world definition and counting",
+    9: "Adjective QA",
+    10: "Adjective QA and counting",
+}
+
 NAME_TO_ID = {
     "periodic": 1,
     "inc-per": 2,

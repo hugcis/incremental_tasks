@@ -1,5 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 import numpy as np
 
@@ -24,8 +35,10 @@ def choose_minimal_set(tasks: TaskType, max_n_seq: int, mask: Mask = None) -> Ta
         else:
             return tasks, mask
 
+
 def get_idx(task: List[str], dictionary: List[str]) -> List[int]:
     return [dictionary.index(s) for s in task]
+
 
 class Task(ABC):
     """
@@ -63,6 +76,14 @@ class Task(ABC):
                 st.add(task_str)
             ct += 1
         return choose_minimal_set(tasks, max_n_seq, mask=masks)
+
+    def generate_tasks_generator(
+        self, max_n_seq: int = 10, **kwargs
+    ) -> Generator[SingleTM, None, None]:
+        count = 0
+        while count < max_n_seq:
+            yield self.generate_single(**kwargs)
+            count += 1
 
     def get_true_output_size(self) -> int:
         output_space: Set[str] = set()
@@ -163,7 +184,7 @@ class TokenTask(Task):
 
 class BinarizedTask(Task):
     """Binarized version of a token class. This class could be though of as a
-       "decorator" that will turn a normal Task into a binarized version
+    "decorator" that will turn a normal Task into a binarized version
     """
 
     def __init__(self, base_task: TokenTask):
