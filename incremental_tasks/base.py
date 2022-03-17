@@ -198,19 +198,19 @@ class BinarizedTask(Task):
             d: formatter.format(n) for n, d in enumerate(self.base_task.dictionary)
         }
 
-    def convert_to_binary(self, task: TaskType, mask: Mask) -> TaskMask:
-        task = [[c for g in t for c in self.mapping[g]] for t in task]
+    def convert_to_binary(self, task: List[str], mask: Optional[List[int]]) -> SingleTM:
+        task = [c for g in task for c in self.mapping[g]]
         if mask is not None:
             ret_mask = [
-                [self.enc_size * c + i for i in range(self.enc_size) for c in m]
-                for m in mask
+                self.enc_size * c + i for i in range(self.enc_size) for c in mask
             ]
+
         else:
             ret_mask = None
         return task, ret_mask
 
-    def generate_tasks(self, max_n_seq: int, **kwargs) -> TaskMask:
-        task, mask = self.base_task.generate_tasks(max_n_seq=max_n_seq, **kwargs)
+    def generate_single(self, max_n_seq: int, **kwargs) -> SingleTM:
+        task, mask = self.base_task.generate_single(max_n_seq=max_n_seq, **kwargs)
         return self.convert_to_binary(task, mask)
 
 

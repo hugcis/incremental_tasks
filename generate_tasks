@@ -56,6 +56,11 @@ def make_parser() -> ArgumentParser:
         action="store_true",
         help="Try to solve the tasks yourself with this interactive game",
     )
+    parser.add_argument(
+        "--no-mask",
+        action="store_true",
+        help="Hide masks from output",
+    )
 
     return parser
 
@@ -85,15 +90,15 @@ if __name__ == "__main__":
         random.shuffle(symbol_map)
 
         def gen_human_eval():
-            task_list, mask = task.generate_single()
-            return (symbol_map[x] for x in get_idx(task_list, task.dictionary)), mask
+            t_list, msk = task.generate_single()
+            return (symbol_map[x] for x in get_idx(t_list, task.dictionary)), msk
 
         gen_fn = gen_human_eval
     else:
 
         def gen_auto():
-            task_list, mask = task.generate_single()
-            return task_list, mask
+            t_list, msk = task.generate_single()
+            return t_list, msk
 
         gen_fn = gen_auto
 
@@ -104,12 +109,13 @@ if __name__ == "__main__":
             current_id = args.task_id
         while current_id < max(ID_TO_TASK.keys()):
             correct_in_a_row = 0
+            n_tries = 0
+            wade = {}
             task = get_task(current_id)
             while correct_in_a_row < 5:
                 task_gen, mask = gen_fn()
                 task_list = list(task_gen)
                 assert mask is not None
-
                 mask = sorted(mask)
                 if len(mask) > 6:
                     stop_idx = mask[5]
@@ -138,18 +144,27 @@ if __name__ == "__main__":
                             as_task_list.append("\033[91m" + base)
                             good = False
                         ct += 1
+                n_tries += 1
                 if good:
                     sys.stdout.write("OK!\n")
                     correct_in_a_row += 1
+                    if correct_in_a_row / 5 not in wade:
+                        wade[correct_in_a_row / 5] = n_tries
                 else:
                     sys.stdout.write("Wrong! right answer was:\n")
                     correct_in_a_row = 0
                 sys.stdout.write(" ".join(as_task_list) + "\n\n")
             current_id += 1
+            wade_score: float = (1 / sum(i for i in wade)) * sum(
+                [k / v for k, v in wade.items()]
+            )
+            sys.stdout.write(
+                f"It took you {n_tries} sentences! WADE would be {wade_score:.3f} \n"
+            )
         print("Congrats you finished the game!")
 
     for _ in range(args.n_examples):
         task_list, mask = gen_fn()
         sys.stdout.write(" ".join(task_list) + "\n")
-        if mask is not None:
+        if mask is not None and not args.no_mask:
             sys.stdout.write(" ".join(map(str, mask)) + "\n")

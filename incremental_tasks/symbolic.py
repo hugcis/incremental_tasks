@@ -30,8 +30,8 @@ class SymbolCounting(TokenTask):
 
         tk = np.random.choice(self.base_dic, size=n_queries, replace=False)
         for tc in tk:
-            left = left + [self.query_symbol, tc] + [i for i in str(ct[tc])]
-            for i in range(len(str(ct[tc]))):
+            left = left + [self.query_symbol, tc] + list(str(ct[tc]))
+            for i in reversed(range(len(str(ct[tc])))):
                 current_task_mask.append(len(left) - 1 - i)
         return left, current_task_mask
 

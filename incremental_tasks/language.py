@@ -233,6 +233,8 @@ NUMBERS = [
 
 
 class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
+    """Language task with multiple prompts and some counting questions"""
+
     def __init__(
         self,
         object_names: List[str] = [
@@ -268,6 +270,7 @@ class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
         self.dictionary += ["HOW", "MANY", "PEOPLE"]
 
     def generate_single(self, **kwargs) -> SingleTM:
+        del kwargs
         current_mask = []
 
         # Choose a subset of object names to work with
@@ -407,6 +410,7 @@ class AdjectiveLanguage(TokenTask):
         super().__init__("adj-qa", 0, dictionary)
 
     def generate_single(self, **kwargs) -> SingleTM:
+        del kwargs
         current_mask = []
 
         # Choose a subset of object names to work with
