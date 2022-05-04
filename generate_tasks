@@ -4,7 +4,7 @@ import random
 import string
 import sys
 from argparse import ArgumentParser
-from typing import Union
+from typing import Union, List
 
 import numpy as np
 
@@ -36,7 +36,7 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument(
         "--extra-args",
-        type=list[str],
+        type=List[str],
         nargs="*",
         help="Optional additional arguments to be passed to the task instance "
         "(see documentatio for details).",

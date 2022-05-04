@@ -65,6 +65,7 @@ class HardSymbolCounting(TokenTask):
         self.eol_symbol = eol_symbol
 
     def generate_single(self, **kwargs) -> SingleTM:
+        del kwargs
         t = np.random.choice(self.lengths)
         current_task_mask = []
         left: list[str] = []

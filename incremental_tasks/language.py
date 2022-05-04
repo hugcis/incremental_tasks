@@ -5,7 +5,7 @@ import numpy as np
 from .base import SingleTM, TokenTask
 
 
-def add_no(verb: str, no_names: Optional[list[str]] = None) -> list[str]:
+def add_no(verb: str, no_names: Optional[List[str]] = None) -> List[str]:
     """Helper function for the QA tasks."""
     if no_names is not None and no_names:
         return ["I", "DO", "NOT", verb] + no_names
@@ -13,7 +13,7 @@ def add_no(verb: str, no_names: Optional[list[str]] = None) -> list[str]:
         return []
 
 
-def add_yes(verb, yes_names: Optional[list[str]] = None) -> list[str]:
+def add_yes(verb, yes_names: Optional[List[str]] = None) -> List[str]:
     """Helper function for the QA tasks."""
     if yes_names is not None and yes_names:
         return ["I", verb] + yes_names
@@ -23,10 +23,10 @@ def add_yes(verb, yes_names: Optional[list[str]] = None) -> list[str]:
 
 def make_sentence(
     verb: str,
-    yes_names: Optional[list[str]] = None,
-    no_names: Optional[list[str]] = None,
-    link_words: list[str] = ["AND", "BUT"],
-) -> list[str]:
+    yes_names: Optional[List[str]] = None,
+    no_names: Optional[List[str]] = None,
+    link_words: List[str] = ["AND", "BUT"],
+) -> List[str]:
     base = []
     if np.random.random() < 0.5:
         base += add_no(verb, no_names)
@@ -170,7 +170,7 @@ class ElementaryLanguageWithWorldDef(ElementaryLanguage):
         n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
         verbs = np.random.choice(self.verbs, size=n_verbs, replace=False)
 
-        name_map: Dict[str, list[str]] = {}
+        name_map: Dict[str, List[str]] = {}
         indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
         indices = np.sort(indices)
         for i, verb in enumerate(verbs):
@@ -178,8 +178,8 @@ class ElementaryLanguageWithWorldDef(ElementaryLanguage):
             name_map[verb] = subset[indices[i] : right].tolist()
 
         task = []
-        yes_map: Dict[str, list[str]] = {}
-        no_map: Dict[str, list[str]] = {}
+        yes_map: Dict[str, List[str]] = {}
+        no_map: Dict[str, List[str]] = {}
         first = True
         for verb in verbs:
             if not first:
@@ -281,7 +281,7 @@ class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
         n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
         verbs = np.random.choice(self.verbs, size=n_verbs, replace=False)
 
-        name_map: Dict[str, list[str]] = {}
+        name_map: Dict[str, List[str]] = {}
         indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
         indices = np.sort(indices)
         for i, verb in enumerate(verbs):
@@ -289,8 +289,8 @@ class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
             name_map[verb] = subset[indices[i] : right].tolist()
 
         task = []
-        yes_map: Dict[str, list[str]] = {}
-        no_map: Dict[str, list[str]] = {}
+        yes_map: Dict[str, List[str]] = {}
+        no_map: Dict[str, List[str]] = {}
         first = True
         for verb in verbs:
             if not first:
@@ -349,8 +349,8 @@ class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
 
 
 def make_adj_objs(
-    size_adj: list[str], color_adj: list[str], obj_names: list[str]
-) -> list[list[str]]:
+    size_adj: List[str], color_adj: List[str], obj_names: List[str]
+) -> List[List[str]]:
     """
     Constructs triples of size adjective, color adjective, object name
 
@@ -415,18 +415,18 @@ class AdjectiveLanguage(TokenTask):
 
         # Choose a subset of object names to work with
         subset_size = np.random.randint(1, len(self.object_names))
-        subset: list[str] = np.random.choice(
+        subset: List[str] = np.random.choice(
             self.object_names, size=subset_size, replace=False
         ).tolist()
         adj_subset = make_adj_objs(self.size_adj, self.color_adj, subset)
 
         # Choose the number of verbs to use
         n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
-        verbs: list[str] = np.random.choice(
+        verbs: List[str] = np.random.choice(
             self.verbs, size=n_verbs, replace=False
         ).tolist()
 
-        name_map: Dict[str, list[list[str]]] = {}
+        name_map: Dict[str, List[List[str]]] = {}
         indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
         indices = np.sort(indices)
         for i, verb in enumerate(verbs):
@@ -434,8 +434,8 @@ class AdjectiveLanguage(TokenTask):
             name_map[verb] = adj_subset[indices[i] : right]
 
         task = []
-        yes_map: Dict[str, list[list[str]]] = {}
-        no_map: Dict[str, list[list[str]]] = {}
+        yes_map: Dict[str, List[List[str]]] = {}
+        no_map: Dict[str, List[List[str]]] = {}
         first = True
         for verb in verbs:
             yes_names, no_names = None, None
@@ -445,7 +445,7 @@ class AdjectiveLanguage(TokenTask):
                 first = False
             # Decide the yes names and the no names (may be empty)
             yes = np.random.randint(len(name_map[verb]) + 1)
-            pre_yes_names: list[list[str]] = [
+            pre_yes_names: List[List[str]] = [
                 name_map[verb][g]
                 for g in np.random.choice(
                     range(len(name_map[verb])), size=yes, replace=False
@@ -485,10 +485,10 @@ class AdjectiveLanguage(TokenTask):
 
     def construct_question(
         self,
-        name_map: dict[str, list[list[str]]],
-        yes_map: dict[str, list[list[str]]],
-        verbs: list[str],
-    ) -> list[str]:
+        name_map: dict[str, List[List[str]]],
+        yes_map: dict[str, List[List[str]]],
+        verbs: List[str],
+    ) -> List[str]:
         # Choose which verb/name we will ask about
         candidates = [(k, i) for k, c in yes_map.items() for i in c if len(i) > 1]
 
@@ -501,7 +501,7 @@ class AdjectiveLanguage(TokenTask):
         if question_chooser < 1 / (len(self.color_adj) + len(self.size_adj) + 2):
             # YES/NO
             question_verb = str(np.random.choice(verbs))
-            tgt: list[str] = name_map[question_verb][
+            tgt: List[str] = name_map[question_verb][
                 np.random.randint(len(name_map[question_verb]))
             ]
             # Make the answer
@@ -566,18 +566,18 @@ class AdjectiveLanguageCounting(TokenTask):
 
         # Choose a subset of object names to work with
         subset_size = np.random.randint(1, len(self.object_names))
-        subset: list[str] = np.random.choice(
+        subset: List[str] = np.random.choice(
             self.object_names, size=subset_size, replace=False
         ).tolist()
         adj_subset = make_adj_objs(self.size_adj, self.color_adj, subset)
 
         # Choose the number of verbs to use
         n_verbs = np.random.randint(1, min(len(self.verbs), subset_size) + 1)
-        verbs: list[str] = np.random.choice(
+        verbs: List[str] = np.random.choice(
             self.verbs, size=n_verbs, replace=False
         ).tolist()
 
-        name_map: Dict[str, list[list[str]]] = {}
+        name_map: Dict[str, List[List[str]]] = {}
         indices = np.random.choice(range(len(subset)), size=n_verbs, replace=False)
         indices = np.sort(indices)
         for i, verb in enumerate(verbs):
@@ -585,8 +585,8 @@ class AdjectiveLanguageCounting(TokenTask):
             name_map[verb] = adj_subset[indices[i] : right]
 
         task = []
-        yes_map: Dict[str, list[list[str]]] = {}
-        no_map: Dict[str, list[list[str]]] = {}
+        yes_map: Dict[str, List[List[str]]] = {}
+        no_map: Dict[str, List[List[str]]] = {}
         first = True
         for verb in verbs:
             yes_names, no_names = None, None
@@ -596,7 +596,7 @@ class AdjectiveLanguageCounting(TokenTask):
                 first = False
             # Decide the yes names and the no names (may be empty)
             yes = np.random.randint(len(name_map[verb]) + 1)
-            pre_yes_names: list[list[str]] = [
+            pre_yes_names: List[List[str]] = [
                 name_map[verb][g]
                 for g in np.random.choice(
                     range(len(name_map[verb])), size=yes, replace=False
@@ -643,10 +643,10 @@ class AdjectiveLanguageCounting(TokenTask):
 
     def construct_question(
         self,
-        name_map: dict[str, list[list[str]]],
-        yes_map: dict[str, list[list[str]]],
-        verbs: list[str],
-    ) -> list[str]:
+        name_map: dict[str, List[List[str]]],
+        yes_map: dict[str, List[List[str]]],
+        verbs: List[str],
+    ) -> List[str]:
         # Choose which verb/name we will ask about
         candidates = [(k, i) for k, c in yes_map.items() for i in c if len(i) > 1]
 
@@ -659,7 +659,7 @@ class AdjectiveLanguageCounting(TokenTask):
         if question_chooser < 2 * p_ans:
             # YES/NO
             question_verb = str(np.random.choice(verbs))
-            tgt: list[str] = name_map[question_verb][
+            tgt: List[str] = name_map[question_verb][
                 np.random.randint(len(name_map[question_verb]))
             ]
             # Make the answer
