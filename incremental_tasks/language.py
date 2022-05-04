@@ -485,8 +485,8 @@ class AdjectiveLanguage(TokenTask):
 
     def construct_question(
         self,
-        name_map: dict[str, List[List[str]]],
-        yes_map: dict[str, List[List[str]]],
+        name_map: Dict[str, List[List[str]]],
+        yes_map: Dict[str, List[List[str]]],
         verbs: List[str],
     ) -> List[str]:
         # Choose which verb/name we will ask about
@@ -643,8 +643,8 @@ class AdjectiveLanguageCounting(TokenTask):
 
     def construct_question(
         self,
-        name_map: dict[str, List[List[str]]],
-        yes_map: dict[str, List[List[str]]],
+        name_map: Dict[str, List[List[str]]],
+        yes_map: Dict[str, List[List[str]]],
         verbs: List[str],
     ) -> List[str]:
         # Choose which verb/name we will ask about
