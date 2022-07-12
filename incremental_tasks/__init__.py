@@ -1,14 +1,4 @@
 """The task library entrypoint."""
-from .language import (
-    AdjectiveLanguage,
-    ElementaryLanguage,
-    ElementaryLanguageWithWorldDef,
-    ElementaryLanguageWithWorldDefCounting,
-    HarderElementaryLanguage,
-    AdjectiveLanguageCounting,
-)
-from .periodic import IncreasingPeriod, Periodic, RandomPeriodic
-from .symbolic import HardSymbolCounting, SymbolCounting
 from .base import (
     BinarizedTask,
     BinaryTask,
@@ -19,8 +9,19 @@ from .base import (
     TaskType,
     TokenTask,
 )
+from .language import (
+    AdjectiveLanguage,
+    AdjectiveLanguageCounting,
+    ElementaryLanguage,
+    ElementaryLanguageWithWorldDef,
+    ElementaryLanguageWithWorldDefCounting,
+    HarderElementaryLanguage,
+)
+from .periodic import IncreasingPeriod, Periodic, RandomPeriodic
+from .symbolic import HardSymbolCounting, SymbolCounting
 
 __all__ = [
+    "main",
     "Task",
     "BinarizedTask",
     "TokenTask",
@@ -80,3 +81,10 @@ NAME_TO_ID = {
     "adj-qa": 9,
     "adj-qa-ct": 10,
 }
+
+
+from .cli import main as main_cli
+
+
+def main():
+    main_cli()

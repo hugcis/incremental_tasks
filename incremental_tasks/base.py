@@ -105,7 +105,7 @@ class Task(ABC):
     def get_n_items_per_seq(self) -> float:
         _, sample_masks = self.generate_tasks(max_n_seq=500)
         if sample_masks is not None:
-            return np.mean([len(i) for i in sample_masks])
+            return float(np.mean([len(i) for i in sample_masks]))
         else:
             raise ValueError(
                 "Cannot estimate number of items per sequence without masking"
@@ -131,6 +131,11 @@ class Task(ABC):
 
 
 class HybridTask(Task):
+    """A hybrid task combines multiple existing tasks into one. For this, it
+    combines both dictionaries and randomly chooses to generate a sentence from
+    one of its original tasks.
+    """
+
     def __init__(
         self, named_tasks: Dict[str, Type[Task]], task_args: Dict[str, List[Any]]
     ):
@@ -139,9 +144,7 @@ class HybridTask(Task):
         # create a new HybridTask
         for n in named_tasks:
             self.named_tasks[n] = named_tasks[n](*task_args.get(n, []))
-        super().__init__(
-            "hyb_{}".format("_".join(t.name for t in self.named_tasks.values()))
-        )
+        super().__init__(f"hyb_{'_'.join(t.name for t in self.named_tasks.values())}")
 
         # The dictionary is the union of all subtask dictionaries
         set_dictionary = set()
@@ -149,23 +152,9 @@ class HybridTask(Task):
             set_dictionary.update(task.dictionary)
         self.dictionary = list(set_dictionary)
 
-    def generate_tasks(self, max_n_seq: int = 10, **kwargs) -> TaskMask:
-        res: TaskType = []
-        msk: Mask = None
-        # Each task contributes a fraction of the total sequences
-        max_n_per_task = max_n_seq // len(self.named_tasks)
-        for n in self.named_tasks:
-            task, mask = self.named_tasks[n].generate_tasks(
-                max_n_seq=max_n_per_task, **kwargs
-            )
-            res = res + task
-            # TODO Take care of cases where some tasks have masks and others
-            # don't
-            if mask is not None:
-                if msk is None:
-                    msk = []
-                msk = msk + mask
-        return res, msk
+    def generate_single(self, **kwargs) -> SingleTM:
+        chosen_task = np.random.choice(list(self.named_tasks.keys()))
+        return self.named_tasks[chosen_task].generate_single(**kwargs)
 
 
 class BinaryTask(Task):
@@ -218,8 +207,8 @@ class BinarizedTask(Task):
             ret_mask = None
         return task, ret_mask
 
-    def generate_single(self, max_n_seq: int, **kwargs) -> SingleTM:
-        task, mask = self.base_task.generate_single(max_n_seq=max_n_seq, **kwargs)
+    def generate_single(self, **kwargs) -> SingleTM:
+        task, mask = self.base_task.generate_single(**kwargs)
         return self.convert_to_binary(task, mask)
 
 

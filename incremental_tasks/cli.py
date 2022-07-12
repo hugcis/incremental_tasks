@@ -10,9 +10,9 @@ from argparse import ArgumentParser
 from typing import List, Union
 
 import numpy as np
-from _version import __version__
 
 from incremental_tasks import ID_TO_TASK, NAME_TO_ID, Task
+from incremental_tasks._version import __version__
 from incremental_tasks.base import get_idx
 
 
@@ -82,7 +82,7 @@ def get_task(task_id: Union[str, int]) -> Task:
     return ID_TO_TASK[task_id_int]()
 
 
-if __name__ == "__main__":
+def main():
     argparser = make_parser()
     args = argparser.parse_args()
     if hasattr(args, "seed"):

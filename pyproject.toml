@@ -4,6 +4,10 @@ version = "0.1.1"
 description = ""
 authors = ["hugcis <hmj.cisneros@gmail.com>"]
 
+[tool.poetry.scripts]
+generate_tasks_cli = "incremental_tasks:main"
+
+
 [tool.poetry.dependencies]
 python = "^3.9"
 numpy = "^1.22.2"
