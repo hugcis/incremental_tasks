@@ -6,7 +6,7 @@ from .base import SingleTM, TokenTask
 
 
 def add_no(verb: str, no_names: Optional[List[str]] = None) -> List[str]:
-    """Helper function for the QA tasks."""
+    """Helper function for the QA tasks. Add NOs affirmation"""
     if no_names is not None and no_names:
         return ["I", "DO", "NOT", verb] + no_names
     else:
@@ -14,7 +14,7 @@ def add_no(verb: str, no_names: Optional[List[str]] = None) -> List[str]:
 
 
 def add_yes(verb, yes_names: Optional[List[str]] = None) -> List[str]:
-    """Helper function for the QA tasks."""
+    """Helper function for the QA tasks. Adds YESs affirmations"""
     if yes_names is not None and yes_names:
         return ["I", verb] + yes_names
     else:
@@ -27,6 +27,9 @@ def make_sentence(
     no_names: Optional[List[str]] = None,
     link_words: List[str] = ["AND", "BUT"],
 ) -> List[str]:
+    """Creates a list of sentences of the form YES/NO affirmation linked with
+    link words.
+    """
     base = []
     if np.random.random() < 0.5:
         base += add_no(verb, no_names)
@@ -48,6 +51,12 @@ def make_sentence(
 
 
 class ElementaryLanguage(TokenTask):
+    """An elementary language task of the form
+    ```
+    I [VERB] [NAMES]. DO I [VERB] [NAME] ? YES/NO
+    ```
+    """
+
     def __init__(
         self,
         object_names: List[str] = ["PETER", "JOHN", "TOM", "JAMES", "PAUL"],
@@ -233,7 +242,7 @@ NUMBERS = [
 
 
 class ElementaryLanguageWithWorldDefCounting(ElementaryLanguageWithWorldDef):
-    """Language task with multiple prompts and some counting questions"""
+    """Language task with multiple prompts and some counting questions."""
 
     def __init__(
         self,
