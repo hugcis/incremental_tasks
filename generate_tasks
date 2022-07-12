@@ -39,7 +39,7 @@ def make_parser() -> ArgumentParser:
         type=List[str],
         nargs="*",
         help="Optional additional arguments to be passed to the task instance "
-        "(see documentatio for details).",
+        "(see documentation for details).",
     )
     parser.add_argument(
         "--human-eval",
