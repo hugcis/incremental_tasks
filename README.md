@@ -11,6 +11,20 @@ the benchmarks, starting from the easiest.
 
 Once a task is solved, it switches to a new one.
 
+<pre><code>
+======================================================================
+0 1 1 0 0 0 1 1 0 1 1 0 0 0 1 1 0 1 1 {?} {?} {?} {?} {?}
+Type you answers (space separated) 0 0 0 1 1
+OK!
+0 1 1 0 0 0 1 1 0 1 1 0 0 0 1 1 0 1 1 0 0 0 1 1
+
+======================================================================
+1 0 0 0 1 0 0 0 {?} {?} {?} {?} {?}
+Type you answers (space separated) 0 1 1 1 0
+Wrong! right answer was:
+1 0 0 0 1 0 0 0 1 0 0 0 1
+</code></pre>
+
 ## Task generation
 
 
