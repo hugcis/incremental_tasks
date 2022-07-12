@@ -7,9 +7,10 @@ import random
 import string
 import sys
 from argparse import ArgumentParser
-from typing import Union, List
+from typing import List, Union
 
 import numpy as np
+from _version import __version__
 
 from incremental_tasks import ID_TO_TASK, NAME_TO_ID, Task
 from incremental_tasks.base import get_idx
@@ -19,6 +20,11 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description="This is the incremental tasks generator. "
         "You can use it to generate the tasks and use the benchmark."
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {version}".format(version=__version__),
     )
     parser.add_argument(
         "-i",
