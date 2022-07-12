@@ -1,3 +1,12 @@
+"""The abstract class that any new task should sub-class. The only mandatory
+abstract method is `generate_single` that should generate a SingleTM object: a
+2-tuple which has the following elements:
+
+- the first element is the list of tokens of the sentence.
+- the second element is an optional list of indexes of tokens that should be
+  predicted.
+
+"""
 from abc import ABC, abstractmethod
 from typing import (
     Any,

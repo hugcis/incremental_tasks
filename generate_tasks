@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""The task generator."""
+"""The task generator. Can be used as a command line dataset generator or as an
+interactive game.
+
+"""
 import random
 import string
 import sys
