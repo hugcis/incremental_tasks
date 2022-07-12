@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "incremental_tasks"
 version = "0.1.1"
-description = ""
+description = "A benchmark of progressively more difficult AI tasks to measure learning speed of ML systems "
 authors = ["hugcis <hmj.cisneros@gmail.com>"]
 
 [tool.poetry.scripts]
