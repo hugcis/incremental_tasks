@@ -87,10 +87,10 @@ class Task(ABC):
         return choose_minimal_set(tasks, max_n_seq, mask=masks)
 
     def generate_tasks_generator(
-        self, max_n_seq: int = 10, **kwargs
+        self, max_n_seq: Optional[int] = 10, **kwargs
     ) -> Generator[SingleTM, None, None]:
         count = 0
-        while count < max_n_seq:
+        while (max_n_seq is not None and count < max_n_seq) or max_n_seq is None:
             yield self.generate_single(**kwargs)
             count += 1
 
