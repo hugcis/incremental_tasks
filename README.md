@@ -47,8 +47,8 @@ Wrong! right answer was:
 
 In [[1]](#ref) the human evaluation score were computed using this interactive
 game with the extra flag `--human-eval` which maps every token to a random one
-so the player doesn't have any prior about the text and needs to do pattern
-matching.
+so the player doesn't have any prior knowledge about the text and needs to do
+pattern matching like a neural network would.
 
 ## Library
 
