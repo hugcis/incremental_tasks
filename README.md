@@ -1,7 +1,10 @@
 # Incremental tasks
 
+This is a modular and extendable benchmark of progressively more difficult AI tasks to measure learning speed of ML systems.
+
 This repository contains the code to generate the incremental task dataset used
 in [[1]](#ref).
+    
 
 ## Installation
 
