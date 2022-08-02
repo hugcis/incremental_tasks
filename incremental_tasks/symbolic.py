@@ -1,3 +1,4 @@
+"""This module implements the symbolic tasks."""
 import collections
 from typing import List, Union
 
@@ -7,6 +8,8 @@ from .base import SingleTM, TokenTask
 
 
 class SymbolCounting(TokenTask):
+    """The base symbol counting task."""
+
     def __init__(
         self,
         lengths: Union[int, List[int]] = [10],
@@ -42,6 +45,11 @@ class SymbolCounting(TokenTask):
 
 
 class HardSymbolCounting(TokenTask):
+    """The 'pattern' counting task. Instead of counting symbols, exact matches
+    of groups of symbols must be found
+
+    """
+
     def __init__(
         self,
         lengths: Union[int, List[int]] = [45],

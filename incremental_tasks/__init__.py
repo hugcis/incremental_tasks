@@ -1,4 +1,6 @@
-"""The task library entrypoint."""
+""" The task library entrypoint.
+"""
+from ._version import __version__
 from .base import (
     BinarizedTask,
     BinaryTask,
@@ -19,6 +21,7 @@ from .language import (
 )
 from .periodic import IncreasingPeriod, Periodic, RandomPeriodic
 from .symbolic import HardSymbolCounting, SymbolCounting
+
 
 __all__ = [
     "main",
@@ -41,6 +44,7 @@ __all__ = [
     "HybridTask",
     "TaskType",
     "AdjectiveLanguageCounting",
+    "__version__",
 ]
 
 ID_TO_TASK = {
@@ -83,8 +87,9 @@ NAME_TO_ID = {
 }
 
 
-from .cli import main as main_cli
+from .cli import main as main_cli  # noqa: E402, pylint: disable=C0413
 
 
 def main():
+    """The main entrypoint for the CLI."""
     main_cli()

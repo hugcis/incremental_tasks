@@ -1,3 +1,4 @@
+"""This module implements the periodic-style tasks."""
 from typing import List, Union
 
 import numpy as np
