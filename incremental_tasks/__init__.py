@@ -22,7 +22,6 @@ from .language import (
 from .periodic import IncreasingPeriod, Periodic, RandomPeriodic
 from .symbolic import HardSymbolCounting, SymbolCounting
 
-
 __all__ = [
     "main",
     "Task",
