@@ -1,15 +1,13 @@
 # Incremental tasks
 
 [![PyPI Version][pypi-image]][pypi-url]
-[![Build Status][build-image]][build-url]
+[![Incremental tasks CI](https://github.com/hugcis/incremental_tasks/actions/workflows/build.yml/badge.svg)](https://github.com/hugcis/incremental_tasks/actions/workflows/build.yml)
 [![][versions-image]][versions-url]
 
 <!-- Badges: -->
 
 [pypi-image]: https://img.shields.io/pypi/v/incremental_tasks
 [pypi-url]: https://pypi.org/project/incremental_tasks/
-[build-image]: https://github.com/hugcis/incremental_tasks/actions/workflows/build.yaml/badge.svg
-[build-url]: https://github.com/hugcis/incremental_tasks/actions/workflows/build.yaml
 [versions-image]: https://img.shields.io/pypi/pyversions/incremental_tasks/
 [versions-url]: https://pypi.org/project/incremental_tasks/
 
