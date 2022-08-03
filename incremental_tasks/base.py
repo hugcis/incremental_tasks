@@ -38,14 +38,13 @@ def choose_minimal_set(tasks: TaskType, max_n_seq: int, mask: Mask = None) -> Ta
         else:
             return_mask = None
         return [tasks[i] for i in idx], return_mask
-    else:
-        if mask is not None and len(mask) != len(tasks):
-            return tasks, None
-        else:
-            return tasks, mask
+    if mask is not None and len(mask) != len(tasks):
+        return tasks, None
+    return tasks, mask
 
 
 def get_idx(task: List[str], dictionary: List[str]) -> List[int]:
+    """Remaps the task symbols to dictionary indexes."""
     return [dictionary.index(s) for s in task]
 
 
@@ -62,39 +61,51 @@ class Task(ABC):
 
     def __init__(self, name: str):
         self.name = name
+        self.lengths: List[int] = []
 
     @abstractmethod
     def generate_single(self, **kwargs) -> SingleTM:
+        """Generates a single pair of sequence/mask for the parent task."""
         raise NotImplementedError
 
     def generate_tasks(self, max_n_seq: int = 10, **kwargs) -> Tuple[TaskType, Mask]:
+        """This generates at most `max_n_seq` unique sequences (less if no new
+        unique sequence is generated)."""
         tasks = []
         masks: List[List[int]] = []
-        st: Set[str] = set()
-        ct = 0
-        while len(st) < max_n_seq and ct < 5 * max_n_seq:
+        task_set: Set[str] = set()
+        count = 0
+        while len(task_set) < max_n_seq and count < 5 * max_n_seq:
             task_list, mask = self.generate_single(**kwargs)
             if hasattr(self, "separator_symbol"):
                 task_str = getattr(self, "separator_symbol").join(task_list)
             else:
                 task_str = "".join(task_list)
-            if task_str not in st:
+            if task_str not in task_set:
                 if mask is not None:
                     masks.append(mask)
                 tasks.append(task_list)
-                st.add(task_str)
-            ct += 1
+                task_set.add(task_str)
+            count += 1
         return choose_minimal_set(tasks, max_n_seq, mask=masks)
 
     def generate_tasks_generator(
         self, max_n_seq: Optional[int] = 10, **kwargs
     ) -> Generator[SingleTM, None, None]:
+        """This method returns a generator of tasks that will generate at most
+        `max_n_seq` sequences (or infinitly many if `max_n_seq` is `None`).
+
+        """
         count = 0
         while (max_n_seq is not None and count < max_n_seq) or max_n_seq is None:
             yield self.generate_single(**kwargs)
             count += 1
 
     def get_true_output_size(self) -> int:
+        """This method computes the "true" output dictionary size for the given
+        task from generated sequences.
+
+        """
         output_space: Set[str] = set()
         sample_tasks, sample_masks = self.generate_tasks(max_n_seq=500)
         if sample_masks is not None:
@@ -103,18 +114,21 @@ class Task(ABC):
         return len(output_space)
 
     def get_n_items_per_seq(self) -> float:
+        """This method computes an average number of symbol per sequence (out of
+        500 sequences)."""
         _, sample_masks = self.generate_tasks(max_n_seq=500)
         if sample_masks is not None:
             return float(np.mean([len(i) for i in sample_masks]))
-        else:
-            raise ValueError(
-                "Cannot estimate number of items per sequence without masking"
-            )
+        raise ValueError("Cannot estimate number of items per sequence without masking")
 
     def output_dimension(self) -> int:
+        """Returns the output dimension for the task (same as the dictionary
+        size)."""
         return len(self.dictionary)
 
     def set_lengths(self, lengths: Union[int, List[int]]):
+        """This is an internal function used to compute the lengths of sequences
+        when applicable."""
         if isinstance(lengths, int) or len(lengths) == 1:
             if not isinstance(lengths, int):
                 length = lengths[0]
@@ -142,8 +156,8 @@ class HybridTask(Task):
         self.named_tasks = {}
         # With this, we create a new instance of each subtask every time we
         # create a new HybridTask
-        for n in named_tasks:
-            self.named_tasks[n] = named_tasks[n](*task_args.get(n, []))
+        for name in named_tasks:
+            self.named_tasks[name] = named_tasks[name](*task_args.get(name, []))
         super().__init__(f"hyb_{'_'.join(t.name for t in self.named_tasks.values())}")
 
         # The dictionary is the union of all subtask dictionaries
@@ -173,10 +187,12 @@ class TokenTask(Task):
         self,
         name: str,
         lengths: Union[int, List[int]],
-        dictionary: Sequence[str] = ["A", "B", "C"],
+        dictionary: Optional[Sequence[str]] = None,
     ):
         super().__init__(name)
-        self.dictionary = list(dictionary)
+        self.dictionary = (
+            list(dictionary) if dictionary is not None else ["A", "B", "C"]
+        )
         self.set_lengths(lengths)
 
 
@@ -197,6 +213,7 @@ class BinarizedTask(Task):
         }
 
     def convert_to_binary(self, task: List[str], mask: Optional[List[int]]) -> SingleTM:
+        """This converts a sequence with multiple symbols to a binary one."""
         task = [c for g in task for c in self.mapping[g]]
         if mask is not None:
             ret_mask = [

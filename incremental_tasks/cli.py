@@ -7,7 +7,7 @@ import random
 import string
 import sys
 from argparse import ArgumentParser
-from typing import List, Union
+from typing import Callable, List, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -17,6 +17,7 @@ from incremental_tasks.base import get_idx
 
 
 def make_parser() -> ArgumentParser:
+    """This function creates the argument parser for the CLI tool."""
     parser = ArgumentParser(
         description="This is the incremental tasks generator. "
         "You can use it to generate the tasks and use the benchmark."
@@ -24,7 +25,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s {version}".format(version=__version__),
+        version=f"%(prog)s {__version__}",
     )
     parser.add_argument(
         "-i",
@@ -75,6 +76,10 @@ def make_parser() -> ArgumentParser:
 
 
 def get_task(task_id: Union[str, int]) -> Task:
+    """Returns a task instance corresponding to the desired task ID (int) or
+    task name (string).
+
+    """
     if isinstance(task_id, int) or task_id.isdigit():
         task_id_int = int(task_id)
     else:
@@ -82,7 +87,88 @@ def get_task(task_id: Union[str, int]) -> Task:
     return ID_TO_TASK[task_id_int]()
 
 
+def check_answer(
+    answer: List[str], task_list: List[str], mask: List[int]
+) -> Tuple[List[str], bool]:
+    """Check a user provided answer against the true output."""
+
+    as_task_list = []
+    count = 0
+    good = True
+    for idx, symbol in enumerate(task_list):
+        if idx not in mask:
+            as_task_list.append(symbol)
+        else:
+            base = f"\033[1m{symbol}\033[0m\033[0m"
+            if count < len(answer) and symbol == answer[count]:
+                as_task_list.append("\033[92m" + base)
+            else:
+                as_task_list.append("\033[91m" + base)
+                good = False
+            count += 1
+    return as_task_list, good
+
+
+def interactive_session(
+    task_id: int, gen_fn: Callable[[], Tuple[Sequence[str], Union[List[int], None]]]
+):
+    """Runs an interactive task solving session starting from the task with id
+    `task_id`.
+
+    The generating function `gen_fn` is used to optionally remap the symbols in
+    the sentences.
+
+    """
+    if task_id is None:
+        current_id = 1
+    else:
+        current_id = task_id
+    while current_id < max(ID_TO_TASK.keys()):
+        correct_in_a_row = 0
+        n_tries = 0
+        wade = {}
+        while correct_in_a_row < 5:
+            task_gen, mask = gen_fn()
+            task_list = list(task_gen)
+            assert mask is not None
+            mask = sorted(mask)
+            if len(mask) > 6:
+                stop_idx = mask[5]
+                mask = mask[:6]
+                task_list = task_list[:stop_idx]
+
+            qs_task_list = [
+                s if n not in mask else "\033[94m\033[1m{?}\033[0m\033[0m"
+                for n, s in enumerate(task_list)
+            ]
+            sys.stdout.write(70 * "=" + "\n")
+            sys.stdout.write(" ".join(qs_task_list) + "\n")
+
+            answer = input("Type you answers (space separated) ").split(" ")
+            as_task_list, good = check_answer(answer, task_list, mask)
+
+            n_tries += 1
+            if good:
+                sys.stdout.write("OK!\n")
+                correct_in_a_row += 1
+                if correct_in_a_row / 5 not in wade:
+                    wade[correct_in_a_row / 5] = n_tries
+            else:
+                sys.stdout.write("Wrong! right answer was:\n")
+                correct_in_a_row = 0
+            sys.stdout.write(" ".join(as_task_list) + "\n\n")
+        current_id += 1
+        wade_score: float = (1 / sum(i for i in wade)) * sum(
+            k / v for k, v in wade.items()
+        )
+        sys.stdout.write(
+            f"It took you {n_tries} sentences! WADE would be {wade_score:.3f} \n"
+        )
+    print("Congrats you finished the game!")
+
+
 def main():
+    """Main entrypoint for the CLI tool."""
     argparser = make_parser()
     args = argparser.parse_args()
     if hasattr(args, "seed"):
@@ -100,7 +186,7 @@ def main():
 
         def gen_human_eval():
             t_list, msk = task.generate_single()
-            return (symbol_map[x] for x in get_idx(t_list, task.dictionary)), msk
+            return [symbol_map[x] for x in get_idx(t_list, task.dictionary)], msk
 
         gen_fn = gen_human_eval
     else:
@@ -112,65 +198,7 @@ def main():
         gen_fn = gen_auto
 
     if args.interactive:
-        if args.task_id is None:
-            current_id = 1
-        else:
-            current_id = args.task_id
-        while current_id < max(ID_TO_TASK.keys()):
-            correct_in_a_row = 0
-            n_tries = 0
-            wade = {}
-            task = get_task(current_id)
-            while correct_in_a_row < 5:
-                task_gen, mask = gen_fn()
-                task_list = list(task_gen)
-                assert mask is not None
-                mask = sorted(mask)
-                if len(mask) > 6:
-                    stop_idx = mask[5]
-                    mask = mask[:6]
-                    task_list = task_list[:stop_idx]
-
-                qs_task_list = [
-                    s if n not in mask else "\033[94m\033[1m{?}\033[0m\033[0m"
-                    for n, s in enumerate(task_list)
-                ]
-                sys.stdout.write(70 * "=" + "\n")
-                sys.stdout.write(" ".join(qs_task_list) + "\n")
-
-                answer = input("Type you answers (space separated) ").split(" ")
-                as_task_list = []
-                ct = 0
-                good = True
-                for n, s in enumerate(task_list):
-                    if n not in mask:
-                        as_task_list.append(s)
-                    else:
-                        base = f"\033[1m{s}\033[0m\033[0m"
-                        if ct < len(answer) and s == answer[ct]:
-                            as_task_list.append("\033[92m" + base)
-                        else:
-                            as_task_list.append("\033[91m" + base)
-                            good = False
-                        ct += 1
-                n_tries += 1
-                if good:
-                    sys.stdout.write("OK!\n")
-                    correct_in_a_row += 1
-                    if correct_in_a_row / 5 not in wade:
-                        wade[correct_in_a_row / 5] = n_tries
-                else:
-                    sys.stdout.write("Wrong! right answer was:\n")
-                    correct_in_a_row = 0
-                sys.stdout.write(" ".join(as_task_list) + "\n\n")
-            current_id += 1
-            wade_score: float = (1 / sum(i for i in wade)) * sum(
-                [k / v for k, v in wade.items()]
-            )
-            sys.stdout.write(
-                f"It took you {n_tries} sentences! WADE would be {wade_score:.3f} \n"
-            )
-        print("Congrats you finished the game!")
+        interactive_session(args.task_id, gen_fn)
 
     for _ in range(args.n_examples):
         task_list, mask = gen_fn()

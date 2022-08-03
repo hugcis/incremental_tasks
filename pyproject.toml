@@ -3,18 +3,55 @@ name = "incremental_tasks"
 version = "0.1.2"
 description = "A benchmark of progressively more difficult AI tasks to measure learning speed of ML systems "
 authors = ["hugcis <hmj.cisneros@gmail.com>"]
+readme = "README.md"
 
 [tool.poetry.scripts]
-generate_tasks_cli = "incremental_tasks:main"
-
+generate_tasks_cli = "incremental_tasks.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.8"
 numpy = "^1.22.2"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
+tox = "^3.25.1"
+black = "^22.6.0"
 pytest = "^5.2"
+pre-commit = "^2.20.0"
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.format]
+max-line-length = "88"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.1.0b3"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = True
+envlist = py38,py39,py310
+
+[gh-actions]
+python =
+    3.8: py38
+    3.9: py39
+    3.10: py310
+
+[testenv]
+deps =
+    black
+    flake8
+    isort
+    mccabe
+    pylint
+    pytest
+commands =
+    black --check incremental_tasks
+    isort --check incremental_tasks
+    flake8 incremental_tasks --max-complexity 10
+    pylint incremental_tasks
+    pytest .
+"""
