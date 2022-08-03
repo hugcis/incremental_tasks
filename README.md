@@ -1,5 +1,18 @@
 # Incremental tasks
 
+[![PyPI Version][pypi-image]][pypi-url]
+[![Build Status][build-image]][build-url]
+[![][versions-image]][versions-url]
+
+<!-- Badges: -->
+
+[pypi-image]: https://img.shields.io/pypi/v/incremental_tasks
+[pypi-url]: https://pypi.org/project/incremental_tasks/
+[build-image]: https://github.com/hugcis/incremental_tasks/actions/workflows/build.yaml/badge.svg
+[build-url]: https://github.com/hugcis/incremental_tasks/actions/workflows/build.yaml
+[versions-image]: https://img.shields.io/pypi/pyversions/incremental_tasks/
+[versions-url]: https://pypi.org/project/incremental_tasks/
+
 This is a modular and extendable benchmark of progressively more difficult AI tasks to measure learning speed of ML systems.
 
 This repository contains the code to generate the incremental task dataset used
