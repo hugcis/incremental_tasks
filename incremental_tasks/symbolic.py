@@ -1,6 +1,7 @@
 """This module implements the symbolic tasks."""
 import collections
-from typing import List, Union
+from dataclasses import dataclass
+from typing import List, Optional, Union
 
 import numpy as np
 
@@ -12,11 +13,15 @@ class SymbolCounting(TokenTask):
 
     def __init__(
         self,
-        lengths: Union[int, List[int]] = [10],
-        dictionary: List[str] = ["A", "B", "C"],
+        lengths: Optional[Union[int, List[int]]] = None,
+        dictionary: Optional[List[str]] = None,
         query_symbol: str = "x",
         eol_symbol: str = ".",
     ):
+        if lengths is None:
+            lengths = [10]
+        if dictionary is None:
+            dictionary = ["A", "B", "C"]
         super().__init__(
             "sym-ct",
             lengths,
@@ -29,19 +34,30 @@ class SymbolCounting(TokenTask):
         self.base_dic = dictionary
 
     def generate_single(self, **kwargs) -> SingleTM:
-        t = np.random.choice(self.lengths)
+        del kwargs
+        base_len = np.random.choice(self.lengths)
         current_task_mask = []
         n_queries = np.random.randint(1, len(self.base_dic) + 1)
-        left = np.random.choice(self.base_dic, size=t, replace=True).tolist()
-        ct: collections.Counter = collections.Counter(left)
+        left = np.random.choice(self.base_dic, size=base_len, replace=True).tolist()
+        counter: collections.Counter = collections.Counter(left)
 
-        tk = np.random.choice(self.base_dic, size=n_queries, replace=False)
-        for tc in tk:
-            left = left + [self.query_symbol, tc] + list(str(ct[tc]))
-            for i in reversed(range(len(str(ct[tc])))):
+        symbol_choice = np.random.choice(self.base_dic, size=n_queries, replace=False)
+        for symbol in symbol_choice:
+            left = left + [self.query_symbol, symbol] + list(str(counter[symbol]))
+            for i in reversed(range(len(str(counter[symbol])))):
                 current_task_mask.append(len(left) - 1 - i)
         left.append(self.eol_symbol)
         return left, current_task_mask
+
+
+@dataclass
+class HardSymCountingSymbols:
+    """A simple class holding all the extra symbols needed for the pattern
+    counting task."""
+
+    separator_symbol: str = "y"
+    query_symbol: str = "x"
+    eol_symbol: str = "."
 
 
 class HardSymbolCounting(TokenTask):
@@ -52,35 +68,38 @@ class HardSymbolCounting(TokenTask):
 
     def __init__(
         self,
-        lengths: Union[int, List[int]] = [45],
-        dictionary: List[str] = ["A", "B", "C", "D", "E"],
-        separator_symbol: str = "y",
-        query_symbol: str = "x",
-        eol_symbol: str = ".",
+        lengths: Optional[Union[int, List[int]]] = None,
+        dictionary: Optional[List[str]] = None,
+        symbols: HardSymCountingSymbols = HardSymCountingSymbols(),
     ):
+        if lengths is None:
+            lengths = [45]
+        if dictionary is None:
+            dictionary = ["A", "B", "C", "D", "E"]
+
         super().__init__(
             "hard-sym-ct",
             lengths,
             dictionary
-            + [query_symbol, separator_symbol, eol_symbol]
+            + [symbols.query_symbol, symbols.separator_symbol, symbols.eol_symbol]
             + [str(i) for i in range(10)],
         )
-        assert query_symbol not in dictionary
+        assert symbols.query_symbol not in dictionary
         assert np.all([len(i) == 1 for i in dictionary])
-        self.query_symbol = query_symbol
-        self.separator_symbol = separator_symbol
-        self.base_dic = dictionary + [separator_symbol]
-        self.eol_symbol = eol_symbol
+        self.query_symbol = symbols.query_symbol
+        self.separator_symbol = symbols.separator_symbol
+        self.base_dic = dictionary + [symbols.separator_symbol]
+        self.eol_symbol = symbols.eol_symbol
 
     def generate_single(self, **kwargs) -> SingleTM:
         del kwargs
-        t = np.random.choice(self.lengths)
+        base_len = np.random.choice(self.lengths)
         current_task_mask = []
         left: list[str] = []
         while not left:
             left = np.random.choice(
                 self.base_dic + [self.separator_symbol] * 2 * len(self.base_dic),
-                size=int(2.5 * t),
+                size=int(2.5 * base_len),
                 replace=True,
             ).tolist()
             while left and left[0] == self.separator_symbol:
@@ -99,21 +118,28 @@ class HardSymbolCounting(TokenTask):
             ]
 
         # Add the query part
-        ct = collections.Counter("".join(left).split(self.separator_symbol))
-        n_queries = np.random.randint(1, len(ct.keys()) + 1)
+        counter = collections.Counter("".join(left).split(self.separator_symbol))
+        n_queries = np.random.randint(1, len(counter.keys()) + 1)
 
-        tk = np.random.choice(list(ct.keys()), size=n_queries, replace=False)
+        pattern_choice = np.random.choice(
+            list(counter.keys()), size=n_queries, replace=False
+        )
         left = left + [self.query_symbol]
-        for tc in tk:
+        for pattern in pattern_choice:
 
-            left = left + list(tc) + [self.separator_symbol] + [i for i in str(ct[tc])]
-            for i in range(len(str(ct[tc]))):
+            left = (
+                left
+                + list(pattern)
+                + [self.separator_symbol]
+                + list(str(counter[pattern]))
+            )
+            for i in range(len(str(counter[pattern]))):
                 current_task_mask.append(len(left) - 1 - i)
             if np.random.random() > 0.2:
-                negative = list(3 * tc[:])
+                negative = list(3 * pattern[:])
                 np.random.shuffle(negative)
-                negative = negative[: len(tc) + np.random.randint(-2, 3)]
-                if negative and "".join(negative) not in ct:
+                negative = negative[: len(pattern) + np.random.randint(-2, 3)]
+                if negative and "".join(negative) not in pattern:
                     left = left + negative + [self.separator_symbol, "0"]
                     current_task_mask.append(len(left) - 1)
         left.append(self.eol_symbol)

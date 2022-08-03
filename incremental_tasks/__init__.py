@@ -23,7 +23,6 @@ from .periodic import IncreasingPeriod, Periodic, RandomPeriodic
 from .symbolic import HardSymbolCounting, SymbolCounting
 
 __all__ = [
-    "main",
     "Task",
     "BinarizedTask",
     "TokenTask",
@@ -84,11 +83,3 @@ NAME_TO_ID = {
     "adj-qa": 9,
     "adj-qa-ct": 10,
 }
-
-
-from .cli import main as main_cli  # noqa: E402, pylint: disable=C0413
-
-
-def main():
-    """The main entrypoint for the CLI."""
-    main_cli()

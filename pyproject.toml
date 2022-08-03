@@ -6,7 +6,7 @@ authors = ["hugcis <hmj.cisneros@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-generate_tasks_cli = "incremental_tasks:main"
+generate_tasks_cli = "incremental_tasks.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.8"
